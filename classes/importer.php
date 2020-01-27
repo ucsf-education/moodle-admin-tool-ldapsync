@@ -162,6 +162,108 @@ class importer {
         set_config('last_synched_on', date('c', $start), 'tool_ldapsync');
 	}
 
+    /**
+     * Checks if user exists on LDAP
+     *
+     * @param string $username
+     */
+    function user_exists($username) {
+        $extusername = core_text::convert($username, 'utf-8', $this->config->ldapencoding);
+
+        // Returns true if given username exists on ldap
+        $users = $this->ldap_get_userlist('('.$this->config->user_attribute.'='.ldap_filter_addslashes($extusername).')');
+        return count($users);
+    }
+
+	/**
+	 * Check if user exists in ldap
+     * @param string $userid
+	 */
+    public function check_users_in_ldap( $userid )
+    {
+        return $this->user_exists( $userid ) > 0;
+    }
+
+    /**
+     * Delete never login account
+     * @param string $userid
+     */
+    public function delete_never_login( $user ) {
+        global $DB;
+
+        if (isset ($user->lastlogin) && $user->lastlogin == 0) {
+            return user_delete_user( $user );
+        } else {
+            $record = $DB->get_record('user', array('id' => $user->id), '*', MUST_EXIST);
+            if ($record->lastlogin == 0) {
+                return user_delete_user( $user );
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns all usernames from LDAP
+     * (copy from auth/ldap/auth.php)
+     *
+     * @param $filter An LDAP search filter to select desired users
+     * @return array of LDAP user names converted to UTF-8
+     */
+    function ldap_get_userlist($filter='*') {
+        $fresult = array();
+
+        $ldapconnection = $this->ldap_connect();
+
+        if ($filter == '*') {
+           $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
+        }
+
+        $contexts = explode(';', $this->config->contexts);
+        if (!empty($this->config->create_context)) {
+            array_push($contexts, $this->config->create_context);
+        }
+
+        $ldap_cookie = '';
+        $ldap_pagedresults = ldap_paged_results_supported($this->config->ldap_version, $ldapconnection);
+        foreach ($contexts as $context) {
+            $context = trim($context);
+            if (empty($context)) {
+                continue;
+            }
+
+            do {
+                if ($ldap_pagedresults) {
+                    ldap_control_paged_result($ldapconnection, $this->config->pagesize, true, $ldap_cookie);
+                }
+                if ($this->config->search_sub) {
+                    // Use ldap_search to find first user from subtree.
+                    $ldap_result = ldap_search($ldapconnection, $context, $filter, array($this->config->user_attribute));
+                } else {
+                    // Search only in this context.
+                    $ldap_result = ldap_list($ldapconnection, $context, $filter, array($this->config->user_attribute));
+                }
+                if(!$ldap_result) {
+                    continue;
+                }
+                if ($ldap_pagedresults) {
+                    ldap_control_paged_result_response($ldapconnection, $ldap_result, $ldap_cookie);
+                }
+                $users = ldap_get_entries_moodle($ldapconnection, $ldap_result);
+                // Add found users to list.
+                for ($i = 0; $i < count($users); $i++) {
+                    $extuser = core_text::convert($users[$i][$this->config->user_attribute][0],
+                                                $this->config->ldapencoding, 'utf-8');
+                    array_push($fresult, $extuser);
+                }
+                unset($ldap_result); // Free mem.
+            } while ($ldap_pagedresults && !empty($ldap_cookie));
+        }
+
+        // If paged results were used, make sure the current connection is completely closed
+        $this->ldap_close($ldap_pagedresults);
+        return $fresult;
+    }
+
 	/**
 	 * Connects and binds to a LDAP server, then returns a handle to it.
 	 * @return resource the connected and bound LDAP handle
@@ -170,15 +272,57 @@ class importer {
 	protected function _connectToLdap ()
 	{
         echo "Connecting to LDAP server ... ";
-        if(!$ldapconnection = ldap_connect_moodle($this->config->host_url, $this->config->ldap_version,
-                                                  $this->config->user_type, $this->config->bind_dn,
-                                                  $this->config->bind_pw, $this->config->opt_deref,
-                                                  $debuginfo, $this->config->start_tls)) {
+        if(!$ldapconnection = $this->ldap_connect()) {
 			throw new Exception("Couldn't bind to LDAP server.");
         }
         echo "successfully connected.\n";
         return $ldapconnection;
 	}
+
+    /**
+     * Connect to the LDAP server, using the plugin configured
+     * settings. It's actually a wrapper around ldap_connect_moodle()
+     *
+     * @return resource A valid LDAP connection (or dies if it can't connect)
+     */
+    function ldap_connect() {
+        // Cache ldap connections. They are expensive to set up
+        // and can drain the TCP/IP ressources on the server if we
+        // are syncing a lot of users (as we try to open a new connection
+        // to get the user details). This is the least invasive way
+        // to reuse existing connections without greater code surgery.
+        if(!empty($this->ldapconnection)) {
+            $this->ldapconns++;
+            return $this->ldapconnection;
+        }
+
+        if($ldapconnection = ldap_connect_moodle($this->config->host_url, $this->config->ldap_version,
+                                                 $this->config->user_type, $this->config->bind_dn,
+                                                 $this->config->bind_pw, $this->config->opt_deref,
+                                                 $debuginfo, $this->config->start_tls)) {
+            $this->ldapconns = 1;
+            $this->ldapconnection = $ldapconnection;
+            return $ldapconnection;
+        }
+
+        print_error('auth_ldap_noconnect_all', 'auth_ldap', '', $debuginfo);
+    }
+
+    /**
+     * Disconnects from a LDAP server
+     *
+     * @param force boolean Forces closing the real connection to the LDAP server, ignoring any
+     *                      cached connections. This is needed when we've used paged results
+     *                      and want to use normal results again.
+     */
+    function ldap_close($force=false) {
+        $this->ldapconns--;
+        if (($this->ldapconns == 0) || ($force)) {
+            $this->ldapconns = 0;
+            @ldap_close($this->ldapconnection);
+            unset($this->ldapconnection);
+        }
+    }
 
 	/**
 	 * Searches LDAP for user records that were updated/created after a given datetime.
