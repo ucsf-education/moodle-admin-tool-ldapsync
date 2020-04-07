@@ -6,7 +6,7 @@
 * @package tool
 * @subpackage ldapsync
 * @author Carson Tam <carson.tam@ucsf.edu>
-* @copyright Copyright (c) 2019, UCSF Center for Knowledge Management
+* @copyright Copyright (c) 2020, UCSF Center for Knowledge Management
 *
 * Run this script on a daily basis via cron job to synchronize user data between a given LDAP server
 * and the moodle database.
@@ -57,7 +57,8 @@ class importer {
      * The configuration details for the plugin.
      * @var object
      */
-    protected $config;
+    // protected $config;
+    var $config;
 
 	/**
 	 * @var integer $_ts UNIX timestamp
@@ -178,10 +179,27 @@ class importer {
 	/**
 	 * Check if user exists in ldap
      * @param string $userid
+     * return # of users not in LDAP.
 	 */
     public function check_users_in_ldap( $userid )
     {
-        return $this->user_exists( $userid ) > 0;
+        if (is_array($userid)) {
+            $userids = array_unique( $userid );
+            $ldapCampusIdProperty = $this->config->user_attribute;
+            $filterTerms = array_map(function ($campusId) use ($ldapCampusIdProperty) {
+                return "({$ldapCampusIdProperty}={$campusId})";
+            }, $userids);
+            $users = [];
+            //Split into groups of 50 to avoid LDAP query length limits
+            foreach (array_chunk($filterTerms, 50) as $terms) {
+                $filterTermsString = implode($terms, '');
+                $filter = "(|{$filterTermsString})";
+                $users = array_merge($users, $this->ldap_get_userlist($filter));
+            }
+            return count($userids) - count($users);
+        } else {
+            return $this->user_exists( $userid ) - 1;
+        }
     }
 
     /**
@@ -209,14 +227,31 @@ class importer {
      * @param $filter An LDAP search filter to select desired users
      * @return array of LDAP user names converted to UTF-8
      */
-    function ldap_get_userlist($filter='*') {
-        $fresult = array();
+    function _ldap_get_userlist($filter='*') {
+        $userlist = explode(')(edupersonprincipalname=', ltrim(rtrim($filter,')'),'(|(edupersonprincipalname='));
+        for ($i = 0; $i < 5; $i++) {
+            // unset($userlist[rand(0, count($userlist))]);
+            unset($userlist[$i]);
+        }
+        return $userlist;
+    }
 
-        $ldapconnection = $this->ldap_connect();
+    function ldap_get_userlist($filter='*') {
+        global $CFG;
+
+        $fresult = array();
 
         if ($filter == '*') {
            $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
+           // @TODO: Is there a better way to do this?
+           // If cache file exists, use it, to improve performance.
+           $cachfile = $CFG->cachedir.'/misc/ldapsync_userlist.json';
+           if (file_exists($cachfile)) {
+               return json_decode(file_get_contents($cachfile), true);
+           }
         }
+
+        $ldapconnection = $this->ldap_connect();
 
         $contexts = explode(';', $this->config->contexts);
         if (!empty($this->config->create_context)) {
@@ -718,6 +753,84 @@ EOQ;
         $moodleattributes['username'] = core_text::strtolower(trim($this->config->user_attribute));
         $moodleattributes['suspended'] = core_text::strtolower(trim($this->config->suspended_attribute));
         return $moodleattributes;
+    }
+
+    /**
+     * Test a DN
+     *
+     * @param resource $ldapconn
+     * @param string $dn The DN to check for existence
+     * @param string $message The identifier of a string as in get_string()
+     * @param string|object|array $a An object, string or number that can be used
+     *      within translation strings as in get_string()
+     * @return true or a message in case of error
+     */
+    private function test_dn($ldapconn, $dn, $message, $a = null) {
+        $ldapresult = @ldap_read($ldapconn, $dn, '(objectClass=*)', array());
+        if (!$ldapresult) {
+            if (ldap_errno($ldapconn) == 32) {
+                // No such object.
+                return get_string($message, 'auth_ldap', $a);
+            }
+
+            $a = array('code' => ldap_errno($ldapconn), 'subject' => $a, 'message' => ldap_error($ldapconn));
+            return get_string('diag_genericerror', 'auth_ldap', $a);
+        }
+
+        return true;
+    }
+
+    /**
+     * Test if settings are correct, print info to output.
+     */
+    public function test_settings() {
+        global $OUTPUT;
+
+        if (!function_exists('ldap_connect')) { // Is php-ldap really there?
+            echo $OUTPUT->notification(get_string('auth_ldap_noextension', 'auth_ldap'), \core\output\notification::NOTIFY_ERROR);
+            return;
+        }
+
+        // Check to see if this is actually configured.
+        if (empty($this->config->host_url)) {
+            // LDAP is not even configured.
+            echo $OUTPUT->notification(get_string('ldapnotconfigured', 'auth_ldap'), \core\output\notification::NOTIFY_ERROR);
+            return;
+        }
+
+        if ($this->config->ldap_version != 3) {
+            echo $OUTPUT->notification(get_string('diag_toooldversion', 'auth_ldap'), \core\output\notification::NOTIFY_WARNING);
+        }
+
+        try {
+            $ldapconn = $this->ldap_connect();
+        } catch (Exception $e) {
+            echo $OUTPUT->notification($e->getMessage(), \core\output\notification::NOTIFY_ERROR);
+            return;
+        }
+
+        // Display paged file results.
+        if (!ldap_paged_results_supported($this->config->ldap_version, $ldapconn)) {
+            echo $OUTPUT->notification(get_string('pagedresultsnotsupp', 'auth_ldap'), \core\output\notification::NOTIFY_INFO);
+        }
+
+        // Check contexts.
+        foreach (explode(';', $this->config->contexts) as $context) {
+            $context = trim($context);
+            if (empty($context)) {
+                echo $OUTPUT->notification(get_string('diag_emptycontext', 'auth_ldap'), \core\output\notification::NOTIFY_WARNING);
+                continue;
+            }
+
+            $message = $this->test_dn($ldapconn, $context, 'diag_contextnotfound', $context);
+            if ($message !== true) {
+                echo $OUTPUT->notification($message, \core\output\notification::NOTIFY_WARNING);
+            }
+        }
+
+        $this->ldap_close(true);
+        // We were able to connect successfuly.
+        echo $OUTPUT->notification(get_string('connectingldapsuccess', 'auth_ldap'), \core\output\notification::NOTIFY_SUCCESS);
     }
 
     /**

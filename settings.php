@@ -19,8 +19,8 @@
  *
  * @package    tool
  * @subpackage ldapsync
- * @copyright  Copyright (c) 2019, UCSF Center for Knowledge Management
- * @author     2019 Carson Tam {@email carson.tam@ucsf.edu}
+ * @copyright  Copyright (c) 2020, UCSF Center for Knowledge Management
+ * @author     2020 Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -206,9 +206,19 @@ if ($hassiteconfig) {
     }
 
     $ADMIN->add('ldapsync', $settings);
+    $ADMIN->add('ldapsync', new admin_externalpage('ldapsync_testsettings',
+                                                   'Test Settings',
+                                                   "$CFG->wwwroot/$CFG->admin/tool/ldapsync/testsettings.php"));
 
     $ADMIN->add('ldapsync', new admin_externalpage('ldapsync_configuretask',
                                                    get_string('configuretask', 'tool_ldapsync'),
                                                    "$CFG->wwwroot/$CFG->admin/tool/task/scheduledtasks.php?action=edit&task=tool_ldapsync%5Ctask%5Cimport_task"));
 
+    $ADMIN->add('ldapsync', new admin_externalpage('ldapsync_purgeusers',
+                                                   get_string('purgeusers', 'tool_ldapsync'),
+                                                   "$CFG->wwwroot/$CFG->admin/tool/ldapsync/user_bulk_purge.php", array('moodle/user:delete')));
+
+    $ADMIN->add('ldapsync', new admin_externalpage('ldapsync_prefetch',
+                                                   "Prefetch LDAP users",
+                                                   "$CFG->wwwroot/$CFG->admin/tool/ldapsync/prefetch_ldap_users.php"));
 }
