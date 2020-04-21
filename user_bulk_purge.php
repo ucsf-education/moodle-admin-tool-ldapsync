@@ -22,14 +22,14 @@ function ldapsync_add_selection_all($ufiltering) {
     $susers = array();
 
     if (!empty($SESSION->user_filtering)
-        && isset($SESSION->user_filtering['existsinldap'])
-        && isset($SESSION->user_filtering['existsinldap'][0]['value'])
+        && isset($SESSION->user_filtering['activeonldap'])
+        && isset($SESSION->user_filtering['activeonldap'][0]['value'])
     ) {
         $rs = $DB->get_recordset_select('user', $sqlwhere, $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname,username');
 
         $sync = new \tool_ldapsync\importer();
         $ldapCampusIdProperty = $sync->config->user_attribute;
-        $existsinldap = $SESSION->user_filtering['existsinldap'][0]['value'];
+        $activeonldap = $SESSION->user_filtering['activeonldap'][0]['value'];
 
         $userlist = $sync->ldap_get_userlist();
         $lusers = array();
@@ -39,11 +39,11 @@ function ldapsync_add_selection_all($ufiltering) {
 
         foreach ($rs as $key => $user) {
             if (isset($lusers[$user->username])) {
-                if ($existsinldap === "1") {
+                if ($activeonldap === "1") {
                     $susers[$key] = $user;
                 }
             } else {
-                if ($existsinldap === "0") {
+                if ($activeonldap === "0") {
                     $susers[$key] = $user;
                 }
             }
@@ -73,14 +73,14 @@ function ldapsync_get_selection_data($ufiltering) {
     $ausers = array();
 
     if (!empty($SESSION->user_filtering)
-        && isset($SESSION->user_filtering['existsinldap'])
-        && isset($SESSION->user_filtering['existsinldap'][0]['value'])
+        && isset($SESSION->user_filtering['activeonldap'])
+        && isset($SESSION->user_filtering['activeonldap'][0]['value'])
     ) {
         $rs = $DB->get_recordset_select('user', $sqlwhere, $params, 'fullname', 'id,username,'.$DB->sql_fullname().' AS fullname');
 
         $sync = new \tool_ldapsync\importer();
         $ldapCampusIdProperty = $sync->config->user_attribute;
-        $existsinldap = $SESSION->user_filtering['existsinldap'][0]['value'];
+        $activeonldap = $SESSION->user_filtering['activeonldap'][0]['value'];
 
         $userlist = $sync->ldap_get_userlist();
         $lusers = array();
@@ -92,11 +92,11 @@ function ldapsync_get_selection_data($ufiltering) {
         foreach ($rs as $key => $user) {
             // if (in_array($user->username, $lusers)) {
             if (isset($lusers[$user->username])) {
-                if ($existsinldap === "1") {
+                if ($activeonldap === "1") {
                     $ausers[$user->id] = $user->fullname;
                 }
             } else {
-                if ($existsinldap === "0") {
+                if ($activeonldap === "0") {
                     $ausers[$user->id] = $user->fullname;
                 }
             }
@@ -176,7 +176,7 @@ $fieldnames = array('realname' => 1, 'lastname' => 1, 'firstname' => 1, 'usernam
                     'country' => 1, 'confirmed' => 1, 'suspended' => 1, 'profile' => 1, 'courserole' => 1,
                     'anycourses' => 0, 'systemrole' => 1, 'cohort' => 1, 'firstaccess' => 1, 'lastaccess' => 1,
                     'neveraccessed' => 0, 'timecreated' => 0, 'timemodified' => 1, 'nevermodified' => 1, 'auth' => 0, 'mnethostid' => 1,
-                    'idnumber' => 1, 'existsinldap' => 0, 'additionalldapfilter' => 1);
+                    'idnumber' => 1, 'activeonldap' => 0, 'additionalldapfilter' => 1);
 
 // create the user filter form
 $ufiltering = new \tool_ldapsync\user_filtering($fieldnames);

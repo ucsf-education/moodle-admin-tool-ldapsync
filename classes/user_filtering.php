@@ -40,7 +40,7 @@ class user_filtering extends \user_filtering {
 
         switch ($fieldname) {
             case 'timecreated': return new \user_filter_date('timecreated', get_string('createdtime', 'tool_ldapsync'), $advanced, 'timecreated');
-            case 'existsinldap':   return new user_filter_yesno('existsinldap', get_string('existsinldap', 'tool_ldapsync'), $advanced, 'existsinldap');
+            case 'activeonldap':   return new user_filter_yesno('activeonldap', get_string('activeonldap', 'tool_ldapsync'), $advanced, 'activeonldap');
             // case 'additionalldapfilter':    return new \user_filter_text('ldapfilter', get_string('additionalldapfilter', 'tool_ldapsync'), $advanced, 'ldapfilter');
             default:
                 return parent::get_field($fieldname, $advanced);
@@ -68,7 +68,7 @@ class user_filtering extends \user_filtering {
                     continue; // Filter not used.
                 }
                 // Custom: this field is not in database.
-                if ($fname == 'existsinldap') {
+                if ($fname == 'activeonldap') {
                     continue;
                 }
                 $field = $this->_fields[$fname];

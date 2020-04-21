@@ -5,7 +5,7 @@ require_once($CFG->libdir.'/adminlib.php');
 
 admin_externalpage_setup('ldapsync_testsettings');
 
-$return = $CFG->wwwroot.'/'.$CFG->admin.'/tool/ldapsync/user_bulk_purge.php';
+$return = $CFG->wwwroot.'/'.$CFG->admin.'/settings.php?section=ldapsync_settings';
 
 echo $OUTPUT->header();
 
