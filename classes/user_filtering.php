@@ -87,6 +87,47 @@ class user_filtering extends \user_filtering {
             return array($sqls, $params);
         }
     }
+
+    /**
+     * Returns user table fields based on active user filters
+     * @param string $extra sql
+     * @param array $params named params (recommended prefix ex)
+     * @return array sql string and $params
+     */
+    // public function get_field_names($extra='', array $params=null) {
+    //     global $SESSION;
+
+    //     $sqls = array();
+    //     if ($extra != '') {
+    //         $sqls[] = $extra;
+    //     }
+    //     $params = (array)$params;
+
+    //     if (!empty($SESSION->user_filtering)) {
+    //         foreach ($SESSION->user_filtering as $fname => $datas) {
+    //             if (!array_key_exists($fname, $this->_fields)) {
+    //                 continue; // Filter not used.
+    //             }
+    //             // Custom: this field is not in database.
+    //             if ($fname == 'activeonldap') {
+    //                 continue;
+    //             }
+    //             $field = $this->_fields[$fname];
+    //             foreach ($datas as $i => $data) {
+    //                 list($s, $p) = $field->get_sql_filter($data);
+    //                 $sqls[] = $s;
+    //                 $params = $params + $p;
+    //             }
+    //         }
+    //     }
+
+    //     if (empty($sqls)) {
+    //         return array('', array());
+    //     } else {
+    //         $sqls = implode(' AND ', $sqls);
+    //         return array($sqls, $params);
+    //     }
+    // }
 }
 
 

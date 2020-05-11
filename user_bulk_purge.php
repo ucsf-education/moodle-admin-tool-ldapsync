@@ -107,7 +107,7 @@ function ldapsync_get_selection_data($ufiltering) {
         $ausers = $DB->get_records_select_menu('user', $sqlwhere, $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname', 0, MAX_BULK_USERS);
     }
 
-    $userlist = array('acount'=>$acount, 'scount'=>$scount, 'ausers'=>false, 'susers'=>false, 'total'=>$total);
+    $userlist = array('acount'=>$acount, 'scount'=>$scount, 'ausers'=>$ausers, 'susers'=>false, 'total'=>$total);
     if ($acount >= MAX_BULK_USERS) {
         $userlist['ausers'] = array_slice($ausers, 0, MAX_BULK_USERS, true);
     }
