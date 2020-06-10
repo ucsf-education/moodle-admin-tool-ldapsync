@@ -40,94 +40,12 @@ class user_filtering extends \user_filtering {
 
         switch ($fieldname) {
             case 'timecreated': return new \user_filter_date('timecreated', get_string('createdtime', 'tool_ldapsync'), $advanced, 'timecreated');
-            case 'activeonldap':   return new user_filter_yesno('activeonldap', get_string('activeonldap', 'tool_ldapsync'), $advanced, 'activeonldap');
+            case 'activeonldap':   return new user_filter_activeonldap('activeonldap', get_string('activeonldap', 'tool_ldapsync'), $advanced, 'activeonldap');
             // case 'additionalldapfilter':    return new \user_filter_text('ldapfilter', get_string('additionalldapfilter', 'tool_ldapsync'), $advanced, 'ldapfilter');
             default:
                 return parent::get_field($fieldname, $advanced);
         }
     }
-
-    /**
-     * Returns sql where statement based on active user filters
-     * @param string $extra sql
-     * @param array $params named params (recommended prefix ex)
-     * @return array sql string and $params
-     */
-    public function get_sql_filter($extra='', array $params=null) {
-        global $SESSION;
-
-        $sqls = array();
-        if ($extra != '') {
-            $sqls[] = $extra;
-        }
-        $params = (array)$params;
-
-        if (!empty($SESSION->user_filtering)) {
-            foreach ($SESSION->user_filtering as $fname => $datas) {
-                if (!array_key_exists($fname, $this->_fields)) {
-                    continue; // Filter not used.
-                }
-                // Custom: this field is not in database.
-                if ($fname == 'activeonldap') {
-                    continue;
-                }
-                $field = $this->_fields[$fname];
-                foreach ($datas as $i => $data) {
-                    list($s, $p) = $field->get_sql_filter($data);
-                    $sqls[] = $s;
-                    $params = $params + $p;
-                }
-            }
-        }
-
-        if (empty($sqls)) {
-            return array('', array());
-        } else {
-            $sqls = implode(' AND ', $sqls);
-            return array($sqls, $params);
-        }
-    }
-
-    /**
-     * Returns user table fields based on active user filters
-     * @param string $extra sql
-     * @param array $params named params (recommended prefix ex)
-     * @return array sql string and $params
-     */
-    // public function get_field_names($extra='', array $params=null) {
-    //     global $SESSION;
-
-    //     $sqls = array();
-    //     if ($extra != '') {
-    //         $sqls[] = $extra;
-    //     }
-    //     $params = (array)$params;
-
-    //     if (!empty($SESSION->user_filtering)) {
-    //         foreach ($SESSION->user_filtering as $fname => $datas) {
-    //             if (!array_key_exists($fname, $this->_fields)) {
-    //                 continue; // Filter not used.
-    //             }
-    //             // Custom: this field is not in database.
-    //             if ($fname == 'activeonldap') {
-    //                 continue;
-    //             }
-    //             $field = $this->_fields[$fname];
-    //             foreach ($datas as $i => $data) {
-    //                 list($s, $p) = $field->get_sql_filter($data);
-    //                 $sqls[] = $s;
-    //                 $params = $params + $p;
-    //             }
-    //         }
-    //     }
-
-    //     if (empty($sqls)) {
-    //         return array('', array());
-    //     } else {
-    //         $sqls = implode(' AND ', $sqls);
-    //         return array($sqls, $params);
-    //     }
-    // }
 }
 
 
@@ -136,7 +54,9 @@ class user_filtering extends \user_filtering {
  * @copyright Copyright (c) 2019, UCSF Center for Knowledge Management
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class user_filter_yesno extends \user_filter_yesno {
+class user_filter_activeonldap extends \user_filter_yesno {
+
+    private $_ldapuserlist = null;
 
     /**
      * Returns the condition to be used with SQL
@@ -145,17 +65,15 @@ class user_filter_yesno extends \user_filter_yesno {
      * @return array sql string and $params
      */
     public function get_sql_filter($data) {
-        static $counter = 0;
-        $name = 'ex_yesno'.$counter++;
-
-        // Always return an empty array
-        return array();
-
         $value = $data['value'];
-        $field = $this->_field;
-        if ($value == '') {
-            return array();
+        $not = $value ? '' : 'NOT';
+
+        if (empty($this->_ldapuserlist)) {
+            $sync = new \tool_ldapsync\importer();
+            $this->_ldapuserlist = $sync->ldap_get_userlist();
         }
-        return array("$field=:$name", array($name => $value));
+        $userlist = '"'.implode('","', $this->_ldapuserlist).'"';
+
+        return array("username $not IN ($userlist)", array());
     }
 }

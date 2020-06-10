@@ -7,125 +7,6 @@ require_once($CFG->libdir.'/adminlib.php');
 require_once($CFG->dirroot.'/'.$CFG->admin.'/user/lib.php');
 require_once($CFG->dirroot.'/'.$CFG->admin.'/user/user_bulk_forms.php');
 
-// START - Copied from admin/user/lib.php (but modified to include ldap calls.
-require_once($CFG->dirroot.'/user/filters/lib.php');
-
-if (!defined('MAX_BULK_USERS')) {
-    define('MAX_BULK_USERS', 2000);
-}
-
-function ldapsync_add_selection_all($ufiltering) {
-    global $SESSION, $DB, $CFG;
-
-    list($sqlwhere, $params) = $ufiltering->get_sql_filter("id<>:exguest AND deleted <> 1", array('exguest'=>$CFG->siteguest));
-
-    $susers = array();
-
-    if (!empty($SESSION->user_filtering)
-        && isset($SESSION->user_filtering['activeonldap'])
-        && isset($SESSION->user_filtering['activeonldap'][0]['value'])
-    ) {
-        $rs = $DB->get_recordset_select('user', $sqlwhere, $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname,username');
-
-        $sync = new \tool_ldapsync\importer();
-        $ldapCampusIdProperty = $sync->config->user_attribute;
-        $activeonldap = $SESSION->user_filtering['activeonldap'][0]['value'];
-
-        $userlist = $sync->ldap_get_userlist();
-        $lusers = array();
-        foreach ($userlist as $user) {
-            $lusers[$user] = $user;
-        }
-
-        foreach ($rs as $key => $user) {
-            if (isset($lusers[$user->username])) {
-                if ($activeonldap === "1") {
-                    $susers[$key] = $user;
-                }
-            } else {
-                if ($activeonldap === "0") {
-                    $susers[$key] = $user;
-                }
-            }
-        }
-        $rs->close();
-    } else {
-        $rs = $DB->get_recordset_select('user', $sqlwhere, $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname');
-        $susers = $rs;
-    }
-
-    foreach ($susers as $user) {
-        if (!isset($SESSION->bulk_users[$user->id])) {
-            $SESSION->bulk_users[$user->id] = $user->id;
-        }
-    }
-}
-
-function ldapsync_get_selection_data($ufiltering) {
-    global $SESSION, $DB, $CFG;
-
-    // get the SQL filter
-    list($sqlwhere, $params) = $ufiltering->get_sql_filter("id<>:exguest AND deleted <> 1", array('exguest'=>$CFG->siteguest));
-
-    $total  = $DB->count_records_select('user', "id<>:exguest AND deleted <> 1", array('exguest'=>$CFG->siteguest));
-    $acount = $DB->count_records_select('user', $sqlwhere, $params);
-    $scount = count($SESSION->bulk_users);
-    $ausers = array();
-
-    if (!empty($SESSION->user_filtering)
-        && isset($SESSION->user_filtering['activeonldap'])
-        && isset($SESSION->user_filtering['activeonldap'][0]['value'])
-    ) {
-        $rs = $DB->get_recordset_select('user', $sqlwhere, $params, 'fullname', 'id,username,'.$DB->sql_fullname().' AS fullname');
-
-        $sync = new \tool_ldapsync\importer();
-        $ldapCampusIdProperty = $sync->config->user_attribute;
-        $activeonldap = $SESSION->user_filtering['activeonldap'][0]['value'];
-
-        $userlist = $sync->ldap_get_userlist();
-        $lusers = array();
-        foreach ($userlist as $user) {
-            $lusers[$user] = $user;
-        }
-
-
-        foreach ($rs as $key => $user) {
-            // if (in_array($user->username, $lusers)) {
-            if (isset($lusers[$user->username])) {
-                if ($activeonldap === "1") {
-                    $ausers[$user->id] = $user->fullname;
-                }
-            } else {
-                if ($activeonldap === "0") {
-                    $ausers[$user->id] = $user->fullname;
-                }
-            }
-        }
-        $rs->close();
-        $acount = count($ausers);
-    } else {
-        $ausers = $DB->get_records_select_menu('user', $sqlwhere, $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname', 0, MAX_BULK_USERS);
-    }
-
-    $userlist = array('acount'=>$acount, 'scount'=>$scount, 'ausers'=>$ausers, 'susers'=>false, 'total'=>$total);
-    if ($acount >= MAX_BULK_USERS) {
-        $userlist['ausers'] = array_slice($ausers, 0, MAX_BULK_USERS, true);
-    }
-
-    if ($scount) {
-        if ($scount < MAX_BULK_USERS) {
-            $bulkusers = $SESSION->bulk_users;
-        } else {
-            $bulkusers = array_slice($SESSION->bulk_users, 0, MAX_BULK_USERS, true);
-        }
-        list($in, $inparams) = $DB->get_in_or_equal($bulkusers);
-        $userlist['susers'] = $DB->get_records_select_menu('user', "id $in", $inparams, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname');
-    }
-
-    return $userlist;
-}
-// END - Copied from admin/user/lib.php
-
 //
 // Copied from user_bulk_action_form() in admin/user/user_bulk/user_bulk_forms.php
 //
@@ -200,16 +81,16 @@ if ($data = $action_form->get_data()) {
     }
 }
 
-$user_bulk_form = new user_bulk_form(null, ldapsync_get_selection_data($ufiltering));
+$user_bulk_form = new user_bulk_form(null, get_selection_data($ufiltering));
 
 if ($data = $user_bulk_form->get_data()) {
     if (!empty($data->addall)) {
-        ldapsync_add_selection_all($ufiltering);
+        add_selection_all($ufiltering);
 
     } else if (!empty($data->addsel)) {
         if (!empty($data->ausers)) {
             if (in_array(0, $data->ausers)) {
-                ldapsync_add_selection_all($ufiltering);
+                add_selection_all($ufiltering);
             } else {
                 foreach($data->ausers as $userid) {
                     if ($userid == -1) {
@@ -242,7 +123,7 @@ if ($data = $user_bulk_form->get_data()) {
 
     // reset the form selections
     unset($_POST);
-    $user_bulk_form = new user_bulk_form(null, ldapsync_get_selection_data($ufiltering));
+    $user_bulk_form = new user_bulk_form(null, get_selection_data($ufiltering));
 }
 // do output
 echo $OUTPUT->header();
