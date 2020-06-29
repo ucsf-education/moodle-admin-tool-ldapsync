@@ -11,15 +11,13 @@ $confirm = optional_param('confirm', 0, PARAM_BOOL);
 admin_externalpage_setup('userbulk');
 require_capability('moodle/user:delete', context_system::instance());
 
-$return = $CFG->wwwroot.'/'.$CFG->admin.'/tool/ldapsync/user_bulk_purge.php';
+$return = $CFG->wwwroot.'/'.$CFG->admin.'/tool/ldapsync/user.php';
 
 if (empty($SESSION->bulk_users)) {
     redirect($return);
 }
 
 echo $OUTPUT->header();
-
-//TODO: add support for large number of users
 
 if ($confirm and confirm_sesskey()) {
     $notifications = '';
@@ -49,7 +47,7 @@ if ($confirm and confirm_sesskey()) {
     $usernames = implode(', ', $userlist);
     echo $OUTPUT->heading(get_string('confirmation', 'admin'));
     $formcontinue = new single_button(new moodle_url('user_bulk_delete.php', array('confirm' => 1)), get_string('yes'));
-    $formcancel = new single_button(new moodle_url('user_bulk_purge.php'), get_string('no'), 'get');
+    $formcancel = new single_button(new moodle_url('user.php'), get_string('no'), 'get');
     echo $OUTPUT->confirm(get_string('deletecheckfull', '', $usernames), $formcontinue, $formcancel);
 }
 

@@ -34,7 +34,7 @@ admin_externalpage_setup('ldapsync_purgeusers');
 require_capability('moodle/user:update', context_system::instance());
 
 if (empty($SESSION->bulk_users)) {
-    redirect(new moodle_url('/admin/tool/ldapsync/user_bulk_purge.php'));
+    redirect(new moodle_url('/admin/tool/ldapsync/user.php'));
 }
 
 if ($dataformat) {
