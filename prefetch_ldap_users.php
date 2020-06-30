@@ -22,8 +22,8 @@ if (!empty($userlist)) {
 
     $cachefile = $cachedir . '/ldapsync_userlist.json';
 
-    if (file_exists($cachfile)) {
-        unlink( $cachfile );
+    if (file_exists($cachefile)) {
+        unlink( $cachefile );
     }
 
     file_put_contents($cachefile, json_encode($userlist));
