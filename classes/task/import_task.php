@@ -48,6 +48,25 @@ class import_task extends \core\task\scheduled_task {
         $sync = new \tool_ldapsync\importer();
         $sync->run();
 
+        $userlist = $sync->ldap_get_userlist();
+
+        if (!empty($userlist)) {
+
+            $cachedir = $CFG->cachedir.'/misc';
+
+            if (!file_exists($cachedir)) {
+                mkdir($cachedir, $CFG->directorypermissions, true);
+            }
+
+            $cachefile = $cachedir . '/ldapsync_userlist.json';
+
+            if (file_exists($cachfile)) {
+                unlink( $cachfile );
+            }
+
+            file_put_contents($cachefile, json_encode($userlist));
+        }
+
         // TODO: Change 'shibboleth' to auth_type configurable variable
         // if (is_enabled_auth('shibboleth')) {
         //     $auth = get_auth_plugin('shibboleth');

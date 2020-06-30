@@ -74,12 +74,15 @@ class importer {
 	 * @var array $_ldapMoodleUserAttrMap maps user table column names to LDAP user record attribute names
 	 */
 	protected $_ldapMoodleUserAttrMap = array (
-		'edupersonprincipalname' => 'username',
-		'givenname' => 'firstname',
-		'ucsfedupreferredgivenname' => 'preferred_firstname',
-		'sn' => 'lastname',
-		'mail' => 'email',
-		'ucsfeduidnumber' => 'idnumber'
+        'edupersonprincipalname' => 'username',
+        'givenname' => 'firstname',
+        'ucsfedupreferredgivenname' => 'preferred_firstname',
+        'sn' => 'lastname',
+        'mail' => 'email',
+        'ucsfeduidnumber' => 'idnumber',
+        'createTimestamp' => 'createdTime',
+        'modifyTimestamp' => 'modifiedTime',
+        'ucsfEduPreferredPronoun' => 'pronoun'
 	);
 
 
@@ -378,7 +381,8 @@ class importer {
         }
 
         $attrmap = $this->ldap_attributes();
-        $search_attribs = array();
+        // $search_attribs = array('timecreated' => 'createTimestamp', 'timemodified' => 'modifyTimestamp');
+        $search_attribs = array('createTimestamp', 'modifyTimestamp');
         foreach ($attrmap as $key => $values) {
             if (!is_array($values)) {
                 $values = array($values);
@@ -505,6 +509,9 @@ CREATE TEMPORARY TABLE {$stagingtblName}
   preferred_firstname VARCHAR(100),
   email VARCHAR(100),
   idnumber VARCHAR(255),
+  timecreated BIGINT(10) UNSIGNED,
+  timemodified BIGINT(10) UNSIGNED,
+  pronoun VARCHAR(255),
   PRIMARY KEY (username, mnethostid)
 )
 ENGINE=MyISAM
