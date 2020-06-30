@@ -509,9 +509,9 @@ CREATE TEMPORARY TABLE {$stagingtblName}
   preferred_firstname VARCHAR(100),
   email VARCHAR(100),
   idnumber VARCHAR(255),
-  // timecreated BIGINT(10) UNSIGNED,
-  // timemodified BIGINT(10) UNSIGNED,
-  // pronoun VARCHAR(255),
+  -- timecreated BIGINT(10) UNSIGNED,
+  -- timemodified BIGINT(10) UNSIGNED,
+  -- pronoun VARCHAR(255),
   PRIMARY KEY (username, mnethostid)
 )
 ENGINE=MyISAM

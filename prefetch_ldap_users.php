@@ -9,6 +9,7 @@ $return = $CFG->wwwroot.'/'.$CFG->admin.'/tool/ldapsync/user.php';
 
 echo $OUTPUT->header();
 
+$sync = new \tool_ldapsync\importer();
 $userlist = $sync->ldap_get_userlist();
 
 if (!empty($userlist)) {
