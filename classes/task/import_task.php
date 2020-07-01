@@ -48,23 +48,20 @@ class import_task extends \core\task\scheduled_task {
         $sync = new \tool_ldapsync\importer();
         $sync->run();
 
+        $cachedir = $CFG->cachedir.'/misc';
+        $cachefile = $cachedir . '/ldapsync_userlist.json';
+        if (file_exists($cachefile)) {
+            unlink( $cachefile );
+        }
+
         $userlist = $sync->ldap_get_userlist();
 
         if (!empty($userlist)) {
-
-            $cachedir = $CFG->cachedir.'/misc';
-
             if (!file_exists($cachedir)) {
                 mkdir($cachedir, $CFG->directorypermissions, true);
             }
-
-            $cachefile = $cachedir . '/ldapsync_userlist.json';
-
-            if (file_exists($cachefile)) {
-                unlink( $cachefile );
-            }
-
             file_put_contents($cachefile, json_encode($userlist));
+            echo "A total of ". count($userlist) . " active users found on LDAP.";
         }
 
         // TODO: Change 'shibboleth' to auth_type configurable variable

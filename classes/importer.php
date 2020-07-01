@@ -160,7 +160,7 @@ class importer {
 		$ldap = $this->_connectToLdap();
         $start = time();
 		$data = $this->_getUpdatesFromLdap($ldap, $this->_ldapDt);
-		ldap_close($ldap); //cleanup
+		$this->ldap_close($ldap); //cleanup
 		// 2. add/merge entries into Moodle
 		$this->_updateMoodleAccounts($data);
         set_config('last_synched_on', date('c', $start), 'tool_ldapsync');
@@ -248,9 +248,9 @@ class importer {
            $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
            // @TODO: Is there a better way to do this?
            // If cache file exists, use it, to improve performance.
-           $cachfile = $CFG->cachedir.'/misc/ldapsync_userlist.json';
-           if (file_exists($cachfile)) {
-               return json_decode(file_get_contents($cachfile), true);
+           $cachefile = $CFG->cachedir.'/misc/ldapsync_userlist.json';
+           if (file_exists($cachefile)) {
+               return json_decode(file_get_contents($cachefile), true);
            }
         }
 
