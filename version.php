@@ -20,12 +20,12 @@
  * @package    tool
  * @subpackage ldapsync
  * @copyright  Copyright (c) 2019, UCSF Center for Knowledge Management
- * @author     2019 Carson Tam {@email carson.tam@ucsf.edu}
+ * @author     2020 Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2019031801; // The current plugin version (Date: YYYYMMDDXX)
+$plugin->version   = 2019031804; // The current plugin version (Date: YYYYMMDDXX)
 $plugin->requires  = 2018051700; // Requires this Moodle version
 $plugin->component = 'tool_ldapsync'; // Full name of the plugin (used for diagnostics)

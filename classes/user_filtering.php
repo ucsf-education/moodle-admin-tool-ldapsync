@@ -65,15 +65,10 @@ class user_filter_activeonldap extends \user_filter_yesno {
      * @return array sql string and $params
      */
     public function get_sql_filter($data) {
+
         $value = $data['value'];
         $not = $value ? '' : 'NOT';
 
-        if (empty($this->_ldapuserlist)) {
-            $sync = new \tool_ldapsync\importer();
-            $this->_ldapuserlist = $sync->ldap_get_userlist();
-        }
-        $userlist = '"'.implode('","', $this->_ldapuserlist).'"';
-
-        return array("username $not IN ($userlist)", array());
+        return array("username $not IN ( SELECT cn FROM {tool_ldapsync} )", array());
     }
 }

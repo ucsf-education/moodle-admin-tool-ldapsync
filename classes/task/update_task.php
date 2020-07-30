@@ -15,36 +15,42 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of tool_ldapsync tasks.
+ * A scheduled task for LDAP user sync.
  *
  * @package    tool_ldapsync
- * @category   task
  * @author     Carson Tam <carson.tam@ucsf.edu>
  * @copyright  Copyright (c) 2019, UCSF Center for Knowledge Management
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+namespace tool_ldapsync\task;
 
-defined('MOODLE_INTERNAL') || die();
+/**
+ * A scheduled task class for LDAP user sync.
+ *
+ */
+class update_task extends \core\task\scheduled_task {
 
-$tasks = array(
-    array(
-        'classname' => 'tool_ldapsync\task\import_task',
-        'blocking' => 0,
-        'minute' => '0',
-        'hour' => '*',
-        'day' => '*',
-        'month' => '*',
-        'dayofweek' => '*',
-        'disabled' => 1
-    ),
-    array(
-        'classname' => 'tool_ldapsync\task\update_task',
-        'blocking' => 0,
-        'minute' => '0',
-        'hour' => '0',
-        'day' => '*',
-        'month' => '*',
-        'dayofweek' => '*',
-        'disabled' => 1
-    )
-);
+    /**
+     * Get a descriptive name for this task (shown to admins).
+     *
+     * @return string
+     */
+    public function get_name() {
+        return get_string('updatetask', 'tool_ldapsync');
+    }
+
+    /**
+     * Run load_ldap_data_to_table
+     */
+    public function execute() {
+        global $CFG;
+
+        $sync = new \tool_ldapsync\importer();
+        $ldapusers = $sync->load_ldap_data_to_table();
+
+        if (!empty($ldapusers)) {
+            echo "A total of ". count($ldapusers) . " active users found on LDAP.";
+        }
+    }
+
+}

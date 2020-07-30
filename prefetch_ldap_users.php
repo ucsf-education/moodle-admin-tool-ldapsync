@@ -11,23 +11,37 @@ echo $OUTPUT->header();
 
 $sync = new \tool_ldapsync\importer();
 
-$cachedir = $CFG->cachedir.'/misc';
-$cachefile = $cachedir . '/ldapsync_userlist.json';
-if (file_exists($cachefile)) {
-    unlink( $cachefile );
-}
+/*
+ * Using a cache file
+ */
 
-$userlist = $sync->ldap_get_userlist();
+// $cachedir = $CFG->cachedir.'/misc';
+// $cachefile = $cachedir . '/ldapsync_userlist.json';
+// if (file_exists($cachefile)) {
+//     unlink( $cachefile );
+// }
 
-if (!empty($userlist)) {
+// $userlist = $sync->ldap_get_userlist();
 
-    if (!file_exists($cachedir)) {
-        mkdir($cachedir, $CFG->directorypermissions, true);
-    }
+// if (!empty($userlist)) {
 
-    file_put_contents($cachefile, json_encode($userlist));
-    echo "A total of ". count($userlist) . " active users found on LDAP.";
-}
+//     if (!file_exists($cachedir)) {
+//         mkdir($cachedir, $CFG->directorypermissions, true);
+//     }
+
+//     file_put_contents($cachefile, json_encode($userlist));
+//     echo "A total of ". count($userlist) . " active users found on LDAP.";
+// }
+
+/*
+ * Using a database table
+ */
+
+$users = $sync->load_ldap_data_to_table();
+
+echo '<pre>';
+print_r($users);
+echo '</pre>';
 
 echo $OUTPUT->continue_button($return);
 echo $OUTPUT->footer();

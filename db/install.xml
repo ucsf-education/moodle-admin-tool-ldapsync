@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="admin/tool/ldapsync/db" VERSION="20200723" COMMENT="XMLDB file for Moodle admin/tool/ldapsync"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="tool_ldapsync" COMMENT="Default comment for tool_ldapsync, please edit me">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="uid" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="Unique Identifier in LDAP"/>
+        <FIELD NAME="cn" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="User Attribute used to name/search LDAP users"/>
+        <FIELD NAME="createtimestamp" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Time of creation on LDAP server."/>
+        <FIELD NAME="modifytimestamp" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Time of modification on LDAP server."/>
+        <FIELD NAME="lastupdated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Last updated time from LDAP"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_username" TYPE="foreign" FIELDS="cn" REFTABLE="user" REFFIELDS="username" COMMENT="User attribute is used as username"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>

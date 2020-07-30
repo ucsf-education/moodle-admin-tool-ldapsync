@@ -224,6 +224,103 @@ class importer {
     }
 
     /**
+     * Load LDAP data into tool_ldapsync table
+     */
+    public function load_ldap_data_to_table() {
+        global $CFG, $DB;
+
+        $fresult = array();
+
+        $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
+
+        $ldapconnection = $this->ldap_connect();
+
+        $contexts = explode(';', $this->config->contexts);
+        if (!empty($this->config->create_context)) {
+            array_push($contexts, $this->config->create_context);
+        }
+
+        $lastupdatedtime = time();
+        $ldap_users = array();
+        $ldap_cookie = '';
+        $ldap_pagedresults = ldap_paged_results_supported($this->config->ldap_version, $ldapconnection);
+        foreach ($contexts as $context) {
+            $context = trim($context);
+            if (empty($context)) {
+                continue;
+            }
+
+            do {
+                if ($ldap_pagedresults) {
+                    ldap_control_paged_result($ldapconnection, $this->config->pagesize, true, $ldap_cookie);
+                }
+                if ($this->config->search_sub) {
+                    // Use ldap_search to find first user from subtree.
+                    $ldap_result = ldap_search($ldapconnection, $context, $filter, array('uid', $this->config->user_attribute, 'createtimestamp', 'modifytimestamp'));
+                } else {
+                    // Search only in this context.
+                    $ldap_result = ldap_list($ldapconnection, $context, $filter, array('uid', $this->config->user_attribute, 'createtimestamp', 'modifytimestamp'));
+                }
+                if(!$ldap_result) {
+                    continue;
+                }
+                if ($ldap_pagedresults) {
+                    ldap_control_paged_result_response($ldapconnection, $ldap_result, $ldap_cookie);
+                }
+                $users = ldap_get_entries_moodle($ldapconnection, $ldap_result);
+                // Add found users to list.
+                for ($i = 0; $i < count($users); $i++) {
+                    $uid = core_text::convert($users[$i]['uid'][0], $this->config->ldapencoding, 'utf-8');
+                    $cn  = core_text::convert($users[$i][$this->config->user_attribute][0],
+                                              $this->config->ldapencoding, 'utf-8');
+                    if (!empty($users[$i]['createtimestamp'][0])) {
+                        $createtimestamp = strtotime(
+                            core_text::convert($users[$i]['createtimestamp'][0],
+                                               $this->config->ldapencoding, 'utf-8'));
+                    } else {
+                        $createtimestamp = 0;
+                    }
+
+                    if (!empty($users[$i]['modifytimestamp'][0])) {
+                        $modifytimestamp = strtotime(
+                            core_text::convert($users[$i]['modifytimestamp'][0],
+                                               $this->config->ldapencoding, 'utf-8'));
+                    } else {
+                        $modifytimestamp = 0;
+                    }
+
+                    $select = sprintf("%s = :uid", $DB->sql_compare_text('uid'));
+                    if ($rs = $DB->get_record_select('tool_ldapsync', $select, array('uid' => "$uid"))) {
+                        $rs->uid = $uid;
+                        $rs->cn = $cn;
+                        $rs->createtimestamp = $createtimestamp;
+                        $rs->modifytimestamp = $modifytimestamp;
+                        $rs->lastupdated = $lastupdatedtime;
+
+                        $DB->update_record('tool_ldapsync', $rs);
+                    } else {
+                        $rs = new stdClass();
+                        $rs->uid = $uid;
+                        $rs->cn = $cn;
+                        $rs->createtimestamp = $createtimestamp;
+                        $rs->modifytimestamp = $modifytimestamp;
+                        $rs->lastupdated = $lastupdatedtime;
+
+                        $rs->id = $DB->insert_record('tool_ldapsync', $rs, true);
+                    }
+                    $ldap_users[$uid] = $rs;
+                }
+                unset($ldap_result); // Free mem.
+            } while ($ldap_pagedresults && !empty($ldap_cookie));
+        }
+
+        // If paged results were used, make sure the current connection is completely closed
+        $this->ldap_close($ldap_pagedresults);
+
+        return $ldap_users;
+    }
+
+    /**
      * Returns all usernames from LDAP
      * (copy from auth/ldap/auth.php)
      *
