@@ -478,14 +478,13 @@ class importer {
         }
 
         $attrmap = $this->ldap_attributes();
-        // $search_attribs = array('timecreated' => 'createTimestamp', 'timemodified' => 'modifyTimestamp');
-        $search_attribs = array('createTimestamp', 'modifyTimestamp');
+        $search_attribs = array('uid', 'createtimestamp', 'modifytimestamp');
         foreach ($attrmap as $key => $values) {
             if (!is_array($values)) {
                 $values = array($values);
             }
             foreach ($values as $value) {
-                $val = trim($value);
+                $val = core_text::strtolower(trim($value));
                 if (!in_array($val, $search_attribs)) {
                     array_push($search_attribs, $val);
                 }
@@ -548,6 +547,10 @@ class importer {
                                 } else {
                                     $result[$attr] = $ldapAttrsLS[$attr][0];
                                 }
+                            } else if (('createtimestamp' == $attr) || ('modifytimestamp' == $attr)) {
+                                $ts = strtotime( core_text::convert( $ldapAttrsLS[$attr][0],
+                                                                     $this->config->ldapencoding, 'utf-8'));
+                                $result[$attr] = empty($ts) ? 0 : $ts;
                             } else {
                                 $result[$attr] = $ldapAttrsLS[$attr][0];
                             }
@@ -584,14 +587,15 @@ class importer {
 			return;
 		}
         // Convert key names to lower case in each record
-        $dataLS = array();
-        foreach ($data as $record) {
-            $recordLS = array();
-            foreach ($record as $key => $value) {
-                $recordLS[core_text::strtolower($key)] = $value;
-            }
-            $dataLS[] = $recordLS;
-        }
+        // (Should already be lower case.
+        // $dataLS = array();
+        // foreach ($data as $record) {
+        //     $recordLS = array();
+        //     foreach ($record as $key => $value) {
+        //         $recordLS[core_text::strtolower($key)] = $value;
+        //     }
+        //     $dataLS[] = $recordLS;
+        // }
 		$userTblName = $CFG->prefix . 'user';
 		$stagingtblName = $CFG->prefix . self::MOODLE_TEMP_TABLE;
 		// attempt to delete a previous temp table
@@ -633,14 +637,14 @@ EOL;
 
 
         echo "Populating staging table ... ";
-        $total = count($dataLS);
+        $total = count($data);
         // populate the staging table in batches of DB_INSERT_BATCH_LIMIT records.
         for($i = 0, $n = (int) ceil($total / self::DB_BATCH_LIMIT); $i < $n; $i++) {
             // build SQL string
             for ($j = $i * self::DB_BATCH_LIMIT, $m = $j + self::DB_BATCH_LIMIT; $j < $m && $j < $total; $j++) {
                 $stagingSql = "INSERT IGNORE INTO {$stagingtblName} (mnethostid, " . implode(', ', $colNames) . ') VALUES';
                 $stagingSqlValues = "";
-                $record = $dataLS[$j];
+                $record = $data[$j];
                 if (!empty($record['edupersonprincipalname'])) {
                     $stagingSqlValues .= "\n( '{$CFG->mnet_localhost_id}'";
                     $record = $this->_addslashes_recursive($record); // escape output
