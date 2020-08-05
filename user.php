@@ -93,8 +93,9 @@ class ldapsync_purgeusers_action_form extends moodleform {
 // create the bulk operations form
 $action_form = new ldapsync_purgeusers_action_form();
 if ($data = $action_form->get_data()) {
-    $SESSION->bulk_users= array();
-    add_selection_all($ufiltering);
+    // $SESSION->bulk_users= array();
+    // add_selection_all($ufiltering);
+    $SESSION->ufiltering = serialize( $ufiltering );
     // check if an action should be performed and do so
     switch ($data->action) {
         case 1: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_confirm.php');

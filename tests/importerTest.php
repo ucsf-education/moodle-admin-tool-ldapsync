@@ -67,30 +67,30 @@ class tool_ldapsync_importer_testcase extends advanced_testcase
 
         $data = array( array(
                              "uid" => "1",
-                             "givenName" => "Jane",
+                             "givenname" => "Jane",
                              "sn" => "Doe",
                              "mail" => "Jane.Doe@example.com",
-                             "ucsfEduIDNumber" => "011234569",
-                             "eduPersonPrincipalName" => "123456@example.com",
-                             "ucsfEduPreferredGivenName" => ""
+                             "ucsfeduidnumber" => "011234569",
+                             "edupersonprincipalname" => "123456@example.com",
+                             "ucsfedupreferredgivenname" => ""
                              ),
                        array(
                              "uid" => "2",
-                             "givenName" => "John",
+                             "givenname" => "John",
                              "sn" => "Doe",
                              "mail" => "John.Doe@example.com",
-                             "ucsfEduIDNumber" => "122345670",
-                             "eduPersonPrincipalName" => "234567@example.com",
-                             "ucsfEduPreferredGivenName" => ""
+                             "ucsfeduidnumber" => "122345670",
+                             "edupersonprincipalname" => "234567@example.com",
+                             "ucsfedupreferredgivenname" => ""
                              ),
                        array(
                              "uid" => "3",
-                             "givenName" => "Joseph",
+                             "givenname" => "Joseph",
                              "sn" => "O'Reilly",
                              "mail" => "Joseph.O'Reilly@example.com",
-                             "ucsfEduIDNumber" => "023456787",
-                             "eduPersonPrincipalName" => "345678@example.com",
-                             "ucsfEduPreferredGivenName" => "Joe"
+                             "ucsfeduidnumber" => "023456787",
+                             "edupersonprincipalname" => "345678@example.com",
+                             "ucsfedupreferredgivenname" => "Joe"
                              )
                        );
 
@@ -102,12 +102,12 @@ class tool_ldapsync_importer_testcase extends advanced_testcase
         $this->assertEquals($expectedFinalCount, $finalCount);
 
         foreach ($data as $user) {
-            $record = $DB->get_record('user', array('idnumber' => $user['ucsfEduIDNumber']));
+            $record = $DB->get_record('user', array('idnumber' => $user['ucsfeduidnumber']));
 
-            if ($user['ucsfEduPreferredGivenName'] === '')
-                $this->assertEquals($user['givenName'], $record->firstname);
+            if ($user['ucsfedupreferredgivenname'] === '')
+                $this->assertEquals($user['givenname'], $record->firstname);
             else
-                $this->assertEquals($user['ucsfEduPreferredGivenName'], $record->firstname);
+                $this->assertEquals($user['ucsfedupreferredgivenname'], $record->firstname);
 
             $this->assertEquals($user['sn'], $record->lastname);
             $this->assertEquals($user['mail'], $record->email);
@@ -116,12 +116,12 @@ class tool_ldapsync_importer_testcase extends advanced_testcase
         // Test update existing record with dashes
         $data = array( array(
                              "uid" => "1",
-                             "givenName" => "Jane",
+                             "givenname" => "Jane",
                              "sn" => "Doe-O'Reilly",
                              "mail" => "Jane.Doe-O'Reilly@example.com",
-                             "ucsfEduIDNumber" => "011234569",
-                             "eduPersonPrincipalName" => "123456@example.com",
-                             "ucsfEduPreferredGivenName" => ""
+                             "ucsfeduidnumber" => "011234569",
+                             "edupersonprincipalname" => "123456@example.com",
+                             "ucsfedupreferredgivenname" => ""
                              ) );
         $expectedFinalCount = $DB->count_records('user');
         $this->sync->updateMoodleAccounts($data);
@@ -129,8 +129,8 @@ class tool_ldapsync_importer_testcase extends advanced_testcase
         $this->assertEquals($expectedFinalCount, $finalCount);
 
         foreach ($data as $user) {
-            $record = $DB->get_record('user', array('idnumber' => $user['ucsfEduIDNumber']));
-            $this->assertEquals($user['givenName'], $record->firstname);
+            $record = $DB->get_record('user', array('idnumber' => $user['ucsfeduidnumber']));
+            $this->assertEquals($user['givenname'], $record->firstname);
             $this->assertEquals($user['sn'], $record->lastname);
             $this->assertEquals($user['mail'], $record->email);
         }
@@ -142,12 +142,12 @@ class tool_ldapsync_importer_testcase extends advanced_testcase
         $this->resetAfterTest(true);
 
         $data = array( array( "uid" => 1,
-                              "givenName" => "John",
+                              "givenname" => "John",
                               "sn" => "Doe",
                               "mail" => "John.Doe@example.com",
-                              "ucsfEduIDNumber" => "991234569",
-                              "eduPersonPrincipalName" => "123456@example.com",
-                              "ucsfEduPreferredGivenName" => "") );
+                              "ucsfeduidnumber" => "991234569",
+                              "edupersonprincipalname" => "123456@example.com",
+                              "ucsfedupreferredgivenname" => "") );
 
         $expectedFinalCount = $DB->count_records('user') + count($data);
 
@@ -158,8 +158,8 @@ class tool_ldapsync_importer_testcase extends advanced_testcase
         $this->assertEquals($expectedFinalCount, $finalCount);
 
         foreach ($data as $user) {
-            $record = $DB->get_record('user', array('idnumber' => $user['ucsfEduIDNumber']));
-            $this->assertEquals($user['givenName'], $record->firstname);
+            $record = $DB->get_record('user', array('idnumber' => $user['ucsfeduidnumber']));
+            $this->assertEquals($user['givenname'], $record->firstname);
             $this->assertEquals($user['sn'], $record->lastname);
             $this->assertEquals($user['mail'], $record->email);
             // We want forum tracking 'on' to be the default.
@@ -174,30 +174,30 @@ class tool_ldapsync_importer_testcase extends advanced_testcase
 
         $data = array( array(
                              "uid" => "1",
-                             "givenName" => "Jane",
+                             "givenname" => "Jane",
                              "sn" => "Doe",
                              "mail" => "Jane.Doe@example.com",
-                             "ucsfEduIDNumber" => "011234569",
-                             "eduPersonPrincipalName" => "",
-                             "ucsfEduPreferredGivenName" => ""
+                             "ucsfeduidnumber" => "011234569",
+                             "edupersonprincipalname" => "",
+                             "ucsfedupreferredgivenname" => ""
                              ),
                        array(
                              "uid" => "2",
-                             "givenName" => "John",
+                             "givenname" => "John",
                              "sn" => "Doe",
                              "mail" => "John.Doe@example.com",
-                             "ucsfEduIDNumber" => "122345670",
-                             "eduPersonPrincipalName" => "",
-                             "ucsfEduPreferredGivenName" => ""
+                             "ucsfeduidnumber" => "122345670",
+                             "edupersonprincipalname" => "",
+                             "ucsfedupreferredgivenname" => ""
                              ),
                        array(
                              "uid" => "3",
-                             "givenName" => "Joseph",
+                             "givenname" => "Joseph",
                              "sn" => "O'Reilly",
                              "mail" => "Joseph.O'Reilly@example.com",
-                             "ucsfEduIDNumber" => "023456787",
-                             "eduPersonPrincipalName" => "345678@example.com",
-                             "ucsfEduPreferredGivenName" => "Joe"
+                             "ucsfeduidnumber" => "023456787",
+                             "edupersonprincipalname" => "345678@example.com",
+                             "ucsfedupreferredgivenname" => "Joe"
                              )
                        );
 
@@ -218,30 +218,30 @@ class tool_ldapsync_importer_testcase extends advanced_testcase
 
         $data = array( array(
                              "uid" => "1",
-                             "givenName" => "Jane",
+                             "givenname" => "Jane",
                              "sn" => "Doe",
                              "mail" => "Jane.Doe@example.com",
-                             "ucsfEduIDNumber" => "011234569",
-                             "eduPersonPrincipalName" => "",
-                             "ucsfEduPreferredGivenName" => ""
+                             "ucsfeduidnumber" => "011234569",
+                             "edupersonprincipalname" => "",
+                             "ucsfedupreferredgivenname" => ""
                              ),
                        array(
                              "uid" => "2",
-                             "givenName" => "John",
+                             "givenname" => "John",
                              "sn" => "Doe",
                              "mail" => "John.Doe@example.com",
-                             "ucsfEduIDNumber" => "122345670",
-                             "eduPersonPrincipalName" => "",
-                             "ucsfEduPreferredGivenName" => ""
+                             "ucsfeduidnumber" => "122345670",
+                             "edupersonprincipalname" => "",
+                             "ucsfedupreferredgivenname" => ""
                              ),
                        array(
                              "uid" => "3",
-                             "givenName" => "Joseph",
+                             "givenname" => "Joseph",
                              "sn" => "O'Reilly",
                              "mail" => "Joseph.O'Reilly@example.com",
-                             "ucsfEduIDNumber" => "023456787",
-                             "eduPersonPrincipalName" => "",
-                             "ucsfEduPreferredGivenName" => "Joe"
+                             "ucsfeduidnumber" => "023456787",
+                             "edupersonprincipalname" => "",
+                             "ucsfedupreferredgivenname" => "Joe"
                              )
                        );
 

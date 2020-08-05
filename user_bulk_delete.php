@@ -13,19 +13,32 @@ require_capability('moodle/user:delete', context_system::instance());
 
 $return = $CFG->wwwroot.'/'.$CFG->admin.'/tool/ldapsync/user.php';
 
-if (empty($SESSION->bulk_users)) {
+if (empty($SESSION->ufiltering)) {
     redirect($return);
 }
+
+$ufiltering = unserialize($SESSION->ufiltering);
+$bulk_users = array();
+
+list($sqlwhere, $params) = $ufiltering->get_sql_filter("id<>:exguest AND deleted <> 1", array('exguest'=>$CFG->siteguest));
+
+$rs = $DB->get_recordset_select('user', $sqlwhere, $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname');
+foreach ($rs as $user) {
+    if (!isset($bulk_users[$user->id])) {
+        $bulk_users[$user->id] = $user->id;
+    }
+}
+$rs->close();
 
 echo $OUTPUT->header();
 
 if ($confirm and confirm_sesskey()) {
     $notifications = '';
-    list($in, $params) = $DB->get_in_or_equal($SESSION->bulk_users);
+    list($in, $params) = $DB->get_in_or_equal($bulk_users);
     $rs = $DB->get_recordset_select('user', "deleted = 0 and id $in", $params);
     foreach ($rs as $user) {
         if (!is_siteadmin($user) and $USER->id != $user->id and delete_user($user)) {
-            unset($SESSION->bulk_users[$user->id]);
+            unset($bulk_users[$user->id]);
         } else {
             $notifications .= $OUTPUT->notification(get_string('deletednot', '', fullname($user, true)));
         }
@@ -42,7 +55,7 @@ if ($confirm and confirm_sesskey()) {
     echo $OUTPUT->render($continue);
     echo $OUTPUT->box_end();
 } else {
-    list($in, $params) = $DB->get_in_or_equal($SESSION->bulk_users);
+    list($in, $params) = $DB->get_in_or_equal($bulk_users);
     $userlist = $DB->get_records_select_menu('user', "id $in", $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname');
     $usernames = implode(', ', $userlist);
     echo $OUTPUT->heading(get_string('confirmation', 'admin'));

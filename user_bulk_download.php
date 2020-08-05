@@ -26,6 +26,7 @@ define('NO_OUTPUT_BUFFERING', true);
 require_once('../../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
 require_once($CFG->libdir.'/dataformatlib.php');
+require_once($CFG->dirroot.'/user/lib.php');
 require_once($CFG->dirroot.'/user/profile/lib.php');
 
 $dataformat = optional_param('dataformat', '', PARAM_ALPHA);
@@ -33,9 +34,22 @@ $dataformat = optional_param('dataformat', '', PARAM_ALPHA);
 admin_externalpage_setup('ldapsync_purgeusers');
 require_capability('moodle/user:update', context_system::instance());
 
-if (empty($SESSION->bulk_users)) {
+if (empty($SESSION->ufiltering)) {
     redirect(new moodle_url('/admin/tool/ldapsync/user.php'));
 }
+
+$ufiltering = unserialize($SESSION->ufiltering);
+$bulk_users = array();
+
+list($sqlwhere, $params) = $ufiltering->get_sql_filter("id<>:exguest AND deleted <> 1", array('exguest'=>$CFG->siteguest));
+
+$rs = $DB->get_recordset_select('user', $sqlwhere, $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname');
+foreach ($rs as $user) {
+    if (!isset($bulk_users[$user->id])) {
+        $bulk_users[$user->id] = $user->id;
+    }
+}
+$rs->close();
 
 if ($dataformat) {
     $fields = array('id'        => 'id',
@@ -66,7 +80,7 @@ if ($dataformat) {
 
     $filename = clean_filename(get_string('users'));
 
-    $downloadusers = new ArrayObject($SESSION->bulk_users);
+    $downloadusers = new ArrayObject($bulk_users);
     $iterator = $downloadusers->getIterator();
 
     download_as_dataformat($filename, $dataformat, $fields, $iterator, function($userid) use ($extrafields, $fields) {
