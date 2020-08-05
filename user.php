@@ -59,7 +59,7 @@ class ldapsync_purgeusers_action_form extends moodleform {
     $unlock       = optional_param('unlock', 0, PARAM_INT);
     $resendemail  = optional_param('resendemail', 0, PARAM_INT);
 
-    admin_externalpage_setup('editusers');
+    admin_externalpage_setup('ldapsync_purgeusers');
 
     $sitecontext = context_system::instance();
     $site = get_site();
@@ -463,7 +463,7 @@ if ($data = $action_form->get_data()) {
             $fullname = fullname($user, true);
 
             $row = array ();
-            $row[] = "<a href=\"../user/view.php?id=$user->id&amp;course=$site->id\">$fullname</a>";
+            $row[] = "<a href=\"../../../user/view.php?id=$user->id&amp;course=$site->id\">$fullname</a>";
             foreach ($extracolumns as $field) {
                 $row[] = s($user->{$field});
             }
