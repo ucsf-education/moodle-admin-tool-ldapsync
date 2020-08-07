@@ -298,9 +298,9 @@ class importer {
                         $rs->modifytimestamp = $modifytimestamp;
                         $rs->lastupdated = $lastupdatedtime;
 
-                        echo "Updating ldap user {$rs->cn}...";
+                        // echo "Updating ldap user {$rs->cn}...";
                         $DB->update_record('tool_ldapsync', $rs);
-                        echo "done.\n";
+                        // echo "done.\n";
                     } else {
                         $rs = new stdClass();
                         $rs->uid = $uid;
@@ -321,8 +321,9 @@ class importer {
 
         // Remove records that are not updated.
         if ($ldap_pagedresults && empty($ldap_cookie)) {
-            echo "Deleting old records...";
             $select = sprintf("%s < :lastupdatedtime", $DB->sql_compare_text('lastupdated'));
+            $cnt = $DB->count_records_select('tool_ldapsync', $select, array('lastupdatedtime' => $lastupdatedtime));
+            echo "Deleting $cnt old records...";
             if (false === $DB->delete_records_select('tool_ldapsync', $select, array('lastupdatedtime' => $lastupdatedtime))) {
                 echo "FAILED to delete records: '$select' with 'lastupdatedtime = $lastupdatedtime' \n";
             } else {
