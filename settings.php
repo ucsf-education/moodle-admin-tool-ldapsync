@@ -217,8 +217,4 @@ if ($hassiteconfig) {
     $ADMIN->add('ldapsync', new admin_externalpage('ldapsync_purgeusers',
                                                    get_string('purgeusers', 'tool_ldapsync'),
                                                    "$CFG->wwwroot/$CFG->admin/tool/ldapsync/user.php", array('moodle/user:delete')));
-
-    // $ADMIN->add('ldapsync', new admin_externalpage('ldapsync_prefetch',
-    //                                                "Prefetch LDAP users",
-    //                                                "$CFG->wwwroot/$CFG->admin/tool/ldapsync/prefetch_ldap_users.php"));
 }
