@@ -14,8 +14,8 @@ function xmldb_tool_ldapsync_upgrade($oldversion) {
 
         // Adding fields to table tool_ldapsync.
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
-        $table->add_field('uid', XMLDB_TYPE_CHAR, '100', null, null, XMLDB_NOTNULL, null, null);
-        $table->add_field('cn', XMLDB_TYPE_CHAR, '100', null, null, XMLDB_NOTNULL, null, null);
+        $table->add_field('uid', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('cn', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL, null, null);
         $table->add_field('createtimestamp', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
         $table->add_field('modifytimestamp', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
         $table->add_field('lastupdated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
