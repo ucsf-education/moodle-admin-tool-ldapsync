@@ -48,11 +48,6 @@ class import_task extends \core\task\scheduled_task {
         $sync = new \tool_ldapsync\importer();
         $sync->run();
 
-        // TODO: Change 'shibboleth' to auth_type configurable variable
-        // if (is_enabled_auth('shibboleth')) {
-        //     $auth = get_auth_plugin('shibboleth');
-        //     // $auth->sync_users(true);
-        // }
     }
 
 }

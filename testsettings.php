@@ -14,13 +14,3 @@ $sync->test_settings();
 
 echo $OUTPUT->continue_button($return);
 echo $OUTPUT->footer();
-
-// // Check for duplicates
-//
-// $userlist = $sync->ldap_get_userlist();
-// echo "Total number of LDAP users in userlist: ". count($userlist);
-
-// echo "<br />";
-// // Remove duplicates
-// $newlist = array_unique($userlist);
-// echo "Total number of LDAP users after removed duplicates: ". count($newlist);
