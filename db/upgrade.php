@@ -22,7 +22,7 @@ function xmldb_tool_ldapsync_upgrade($oldversion) {
 
         // Adding keys to table tool_ldapsync.
         $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
-        $table->add_key('fk_username', XMLDB_KEY_FOREIGN, ['cn'], 'user', ['username']);
+        $table->add_key('fk_username', XMLDB_KEY_FOREIGN_UNIQUE, ['cn'], 'user', ['username']);
 
         // Conditionally launch create table for tool_ldapsync.
         if (!$dbman->table_exists($table)) {
