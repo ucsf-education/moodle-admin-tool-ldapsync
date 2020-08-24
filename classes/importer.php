@@ -556,7 +556,9 @@ class importer {
                                     $email = trim(explode($delimiter, $email)[0]);
                                 }
                                 $result[$attr] = $email;
-                            } else if (core_text::strtolower('ucsfEduPreferredGivenName') == $attr) {
+                            } else if ((core_text::strtolower('sn') == $attr)
+                                       ||(core_text::strtolower('givenname') == $attr)
+                                       ||(core_text::strtolower('ucsfEduPreferredGivenName') == $attr)){
                                 // Fixing: this field could have 'question mark' in it.
                                 //         If so, do not use.  ($DB->execute() does not like '?')
                                 if (strstr($ldapAttrsLS[$attr][0], '?')) {
