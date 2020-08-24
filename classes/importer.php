@@ -530,7 +530,6 @@ class importer {
                 }
             }
 
-
             $ldapEntry = @ldap_first_entry($ldap, $ldapResults);
             while ($ldapEntry) {
                 $ldapAttrs = ldap_get_attributes($ldap, $ldapEntry);
@@ -557,8 +556,15 @@ class importer {
                                 }
                                 $result[$attr] = $email;
                             } else if ((core_text::strtolower('sn') == $attr)
-                                       ||(core_text::strtolower('givenname') == $attr)
-                                       ||(core_text::strtolower('ucsfEduPreferredGivenName') == $attr)){
+                                       ||(core_text::strtolower('givenname') == $attr)){
+                                // Fixing: this field could have 'question mark' in it.
+                                //         If so, just remove it.  ($DB->execute() does not like '?')
+                                if (strstr($ldapAttrsLS[$attr][0], '?')) {
+                                    $result[$attr] = str_replace('?', '', $ldapAttrsLS[$attr][0]);
+                                } else {
+                                    $result[$attr] = $ldapAttrsLS[$attr][0];
+                                }
+                            } else if (core_text::strtolower('ucsfEduPreferredGivenName') == $attr){
                                 // Fixing: this field could have 'question mark' in it.
                                 //         If so, do not use.  ($DB->execute() does not like '?')
                                 if (strstr($ldapAttrsLS[$attr][0], '?')) {
