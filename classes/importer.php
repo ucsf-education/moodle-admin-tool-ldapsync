@@ -510,23 +510,52 @@ class importer {
 
         $ldappagedresults = ldap_paged_results_supported($this->config->ldap_version, $ldap);
         $ldapcookie = '';
+        $servercontrols = array();
         $results = array();
 
         do {
             if ($ldappagedresults) {
-                ldap_control_paged_result($ldap, $this->config->pagesize, true, $ldapcookie);
+                // TODO: Remove the old branch of code once PHP 7.3.0 becomes required (Moodle 3.11).
+                if (version_compare(PHP_VERSION, '7.3.0', '<')) {
+                    // Before 7.3, use this function that was deprecated in PHP 7.4.
+                    ldap_control_paged_result($ldap, $this->config->pagesize, true, $ldapcookie);
+                } else {
+                    // PHP 7.3 and up, use server controls.
+                    $servercontrols = array(array(
+                        'oid' => LDAP_CONTROL_PAGEDRESULTS, 'value' => array(
+                            'size' => $this->config->pagesize, 'cookie' => $ldapcookie)));
+                }
+
             }
 
-            $ldapResults = ldap_list($ldap, $this->config->contexts, $filter, $search_attribs); // we only wanna go down 1 lvl into the directory tree
+            // Search only in this context.
+            // TODO: Remove the old branch of code once PHP 7.3.0 becomes required (Moodle 3.11).
+            if (version_compare(PHP_VERSION, '7.3.0', '<')) {
+                $ldapResults = ldap_list($ldap, $this->config->contexts, $filter, $search_attribs); // we only wanna go down 1 lvl into the directory tree
+            } else {
+                $ldapResults = ldap_list($ldap, $this->config->contexts, $filter, $search_attribs,
+                                         0, -1, -1, LDAP_DEREF_NEVER, $servercontrols);
+            }
             if (!$ldapResults) {
                 continue;
             }
             if ($ldappagedresults) {
-                $pagedresp = ldap_control_paged_result_response($ldap, $ldapResults, $ldapcookie);
-                // Function ldap_control_paged_result_response() does not overwrite $ldapcookie if it fails, by
-                // setting this to null we avoid an infinite loop.
-                if ($pagedresp === false) {
-                    $ldapcookie = null;
+                // TODO: Remove the old branch of code once PHP 7.3.0 becomes required (Moodle 3.11).
+                if (version_compare(PHP_VERSION, '7.3.0', '<')) {
+                    // Before 7.3, use this function that was deprecated in PHP 7.4.
+                    $pagedresp = ldap_control_paged_result_response($ldap, $ldapResults, $ldapcookie);
+                    // Function ldap_control_paged_result_response() does not overwrite $ldapcookie if it fails, by
+                    // setting this to null we avoid an infinite loop.
+                    if ($pagedresp === false) {
+                        $ldapcookie = null;
+                    }
+                } else {
+                    // Get next cookie from controls.
+                    ldap_parse_result($ldap, $ldapResults, $errcode, $matcheddn,
+                                      $errmsg, $referrals, $controls);
+                    if (isset($controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'])) {
+                        $ldapcookie = $controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'];
+                    }
                 }
             }
 
