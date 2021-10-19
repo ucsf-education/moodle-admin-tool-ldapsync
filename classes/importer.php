@@ -879,36 +879,37 @@ EOQ;
                     if (empty($user->lang)) {
                         $user->lang = $CFG->lang;
                     }
-                    $id = $DB->insert_record('user', $user);
-                    if ($id) {
-                        $user->id = $id;
-                        if (!empty($this->config->forcechangepassword)) {
-                            set_user_preference('auth_forcepasswordchange', 1, $user->id);
-                        }
-                        echo "- Created user '{$user->username}'.\n";
+                    try {
+                        $id = $DB->insert_record('user', $user);
+                    } catch (Exception $e) {
+                        echo "- Failed to create user '{$user->username}' with the following error: {$e->getMessage()}.\n";
+                        continue;
+                    }
+                    $user->id = $id;
+                    if (!empty($this->config->forcechangepassword)) {
+                        set_user_preference('auth_forcepasswordchange', 1, $user->id);
+                    }
+                    echo "- Created user '{$user->username}'.\n";
 
-                        // Update tool_ldapsync table
-                        $select = sprintf("%s = :cn", $DB->sql_compare_text('cn'));
-                        if ($rs = $DB->get_record_select('tool_ldapsync', $select, array('cn' => $user->username))) {
-                            $rs->createtimestamp = $user->timecreated;
-                            $rs->modifytimestamp = $user->timemodified;
-                            $rs->lastupdated = time();
+                    // Update tool_ldapsync table
+                    $select = sprintf("%s = :cn", $DB->sql_compare_text('cn'));
+                    if ($rs = $DB->get_record_select('tool_ldapsync', $select, array('cn' => $user->username))) {
+                        $rs->createtimestamp = $user->timecreated;
+                        $rs->modifytimestamp = $user->timemodified;
+                        $rs->lastupdated = time();
 
-                            echo "- Updating tool_ldapsync table, user '{$user->username}', attributes\n" . print_r($rs,1);
-                            $DB->update_record('tool_ldapsync', $rs);
-                        } else {
-                            $rs = new stdClass();
-                            $rs->uid = $user->uid;
-                            $rs->cn = $user->username;
-                            $rs->createtimestamp = $user->timecreated;
-                            $rs->modifytimestamp = $user->timemodified;
-                            $rs->lastupdated = time();
-
-                            echo "- Inserting tool_ldapsync table, user '{$user->username}', attributes\n" . print_r($rs,1);
-                            $rs->id = $DB->insert_record('tool_ldapsync', $rs, true);
-                        }
+                        echo "- Updating tool_ldapsync table, user '{$user->username}', attributes\n" . print_r($rs,1);
+                        $DB->update_record('tool_ldapsync', $rs);
                     } else {
-                        echo "- Failed to create user '{$user->username}'.\n";
+                        $rs = new stdClass();
+                        $rs->uid = $user->uid;
+                        $rs->cn = $user->username;
+                        $rs->createtimestamp = $user->timecreated;
+                        $rs->modifytimestamp = $user->timemodified;
+                        $rs->lastupdated = time();
+
+                        echo "- Inserting tool_ldapsync table, user '{$user->username}', attributes\n" . print_r($rs, 1);
+                        $rs->id = $DB->insert_record('tool_ldapsync', $rs, true);
                     }
                 }
             }
