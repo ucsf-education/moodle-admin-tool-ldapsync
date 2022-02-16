@@ -697,25 +697,27 @@ EOL;
         for($i = 0, $n = (int) ceil($total / self::DB_BATCH_LIMIT); $i < $n; $i++) {
             // build SQL string
             for ($j = $i * self::DB_BATCH_LIMIT, $m = $j + self::DB_BATCH_LIMIT; $j < $m && $j < $total; $j++) {
-                $stagingSql = "INSERT IGNORE INTO {$stagingtblName} (mnethostid, " . implode(', ', $colNames) . ') VALUES';
-                $stagingSqlValues = "";
+                $stagingSql =
+                    "INSERT IGNORE INTO {$stagingtblName} (mnethostid, " . implode(', ', $colNames) . ')'
+                    . ' VALUES (?, ' . implode(', ', array_fill(0, count($colNames), '?')) . ')';
+                $stagingSqlValues = [];
                 $record = $data[$j];
                 if (!empty($record['edupersonprincipalname'])) {
-                    $stagingSqlValues .= "\n( '{$CFG->mnet_localhost_id}'";
-                    $record = $this->_addslashes_recursive($record); // escape output
+                    $stagingSqlValues[] = "{$CFG->mnet_localhost_id}";
                     foreach ($attrNames as $attrName) {
                         $attrValue = $record[$attrName] ?? '';
-                        $stagingSqlValues .= ", '" . $attrValue . "'";
+                        $stagingSqlValues[] = $attrValue;
                     }
-                    $stagingSqlValues .= "),";
                 }
                 if (!empty($stagingSqlValues)) {
-                    $stagingSql = $stagingSql . rtrim($stagingSqlValues, ','); // trim trailing comma
-                    // insert data into SQL table
                     try {
-                        $DB->execute($stagingSql);
+                        $DB->execute($stagingSql, $stagingSqlValues);
                     } catch (Exception $e) {
-                        throw new Exception ("Couldn't populate staging table: ". $e->getMessage(). "\nUnable to execute this SQL:\n  $stagingSql \n");
+                        throw new Exception (
+                            "Couldn't populate staging table: "
+                            . $e->getMessage(). "\nFailed to insert the following user data:\n"
+                            . print_r($stagingSqlValues, true) . "\n"
+                        );
                     }
                     unset($stagingSqlValues);
                 }
@@ -877,36 +879,37 @@ EOQ;
                     if (empty($user->lang)) {
                         $user->lang = $CFG->lang;
                     }
-                    $id = $DB->insert_record('user', $user);
-                    if ($id) {
-                        $user->id = $id;
-                        if (!empty($this->config->forcechangepassword)) {
-                            set_user_preference('auth_forcepasswordchange', 1, $user->id);
-                        }
-                        echo "- Created user '{$user->username}'.\n";
+                    try {
+                        $id = $DB->insert_record('user', $user);
+                    } catch (Exception $e) {
+                        echo "- Failed to create user '{$user->username}' with the following error: {$e->getMessage()}.\n";
+                        continue;
+                    }
+                    $user->id = $id;
+                    if (!empty($this->config->forcechangepassword)) {
+                        set_user_preference('auth_forcepasswordchange', 1, $user->id);
+                    }
+                    echo "- Created user '{$user->username}'.\n";
 
-                        // Update tool_ldapsync table
-                        $select = sprintf("%s = :cn", $DB->sql_compare_text('cn'));
-                        if ($rs = $DB->get_record_select('tool_ldapsync', $select, array('cn' => $user->username))) {
-                            $rs->createtimestamp = $user->timecreated;
-                            $rs->modifytimestamp = $user->timemodified;
-                            $rs->lastupdated = time();
+                    // Update tool_ldapsync table
+                    $select = sprintf("%s = :cn", $DB->sql_compare_text('cn'));
+                    if ($rs = $DB->get_record_select('tool_ldapsync', $select, array('cn' => $user->username))) {
+                        $rs->createtimestamp = $user->timecreated;
+                        $rs->modifytimestamp = $user->timemodified;
+                        $rs->lastupdated = time();
 
-                            echo "- Updating tool_ldapsync table, user '{$user->username}', attributes\n" . print_r($rs,1);
-                            $DB->update_record('tool_ldapsync', $rs);
-                        } else {
-                            $rs = new stdClass();
-                            $rs->uid = $user->uid;
-                            $rs->cn = $user->username;
-                            $rs->createtimestamp = $user->timecreated;
-                            $rs->modifytimestamp = $user->timemodified;
-                            $rs->lastupdated = time();
-
-                            echo "- Inserting tool_ldapsync table, user '{$user->username}', attributes\n" . print_r($rs,1);
-                            $rs->id = $DB->insert_record('tool_ldapsync', $rs, true);
-                        }
+                        echo "- Updating tool_ldapsync table, user '{$user->username}', attributes\n" . print_r($rs,1);
+                        $DB->update_record('tool_ldapsync', $rs);
                     } else {
-                        echo "- Failed to create user '{$user->username}'.\n";
+                        $rs = new stdClass();
+                        $rs->uid = $user->uid;
+                        $rs->cn = $user->username;
+                        $rs->createtimestamp = $user->timecreated;
+                        $rs->modifytimestamp = $user->timemodified;
+                        $rs->lastupdated = time();
+
+                        echo "- Inserting tool_ldapsync table, user '{$user->username}', attributes\n" . print_r($rs, 1);
+                        $rs->id = $DB->insert_record('tool_ldapsync', $rs, true);
                     }
                 }
             }
@@ -1043,40 +1046,5 @@ EOQ;
         $this->ldap_close(true);
         // We were able to connect successfuly.
         echo $OUTPUT->notification(get_string('connectingldapsuccess', 'auth_ldap'), \core\output\notification::NOTIFY_SUCCESS);
-    }
-
-    /**
-     * Recursive implementation of addslashes()
-     *
-     * This function will allow you to add the slashes from a variable.
-     * If the variable is an array or object, slashes will be added
-     * to the items (or properties) it contains, even if they are arrays
-     * or objects themselves.
-     *
-     * @param mixed the variable to add slashes from
-     * @return mixed
-     */
-    protected function _addslashes_recursive($var) {
-        if (is_object($var)) {
-            $new_var = new stdClass();
-            $properties = get_object_vars($var);
-            foreach($properties as $property => $value) {
-                $new_var->$property = $this->_addslashes_recursive($value);
-            }
-
-        } else if (is_array($var)) {
-            $new_var = array();
-            foreach($var as $property => $value) {
-                $new_var[$property] = $this->_addslashes_recursive($value);
-            }
-
-        } else if (is_string($var)) {
-            $new_var = addslashes($var);
-
-        } else { // nulls, integers, etc.
-            $new_var = $var;
-        }
-
-        return $new_var;
     }
 }
