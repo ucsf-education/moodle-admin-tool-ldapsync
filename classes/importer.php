@@ -254,15 +254,7 @@ class importer {
 
             do {
                 if ($ldap_pagedresults) {
-                    $servercontrols = array(
-                        array(
-                            'oid' => LDAP_CONTROL_PAGEDRESULTS,
-                            'value' => array(
-                                'size' => $this->config->pagesize,
-                                'cookie' => $ldap_cookie
-                            )
-                        )
-                    );
+                    $servercontrols = $this->get_ldap_controls($this->config, $ldap_cookie);
                 }
                 if ($this->config->search_sub) {
                     // Use ldap_search to find first user from subtree.
@@ -419,15 +411,7 @@ class importer {
             $servercontrols = array();
             do {
                 if ($ldap_pagedresults) {
-                    $servercontrols = array(
-                        array(
-                            'oid' => LDAP_CONTROL_PAGEDRESULTS,
-                            'value' => array(
-                                'size' => $this->config->pagesize,
-                                'cookie' => $ldap_cookie
-                            )
-                        )
-                    );
+                    $servercontrols = $this->get_ldap_controls($this->config, $ldap_cookie);
                 }
                 if ($this->config->search_sub) {
                     // Use ldap_search to find first user from subtree.
@@ -583,15 +567,7 @@ class importer {
 
         do {
             if ($ldappagedresults) {
-                $servercontrols = array(
-                    array(
-                        'oid' => LDAP_CONTROL_PAGEDRESULTS,
-                        'value' => array(
-                            'size' => $this->config->pagesize,
-                            'cookie' => $ldapcookie
-                        )
-                    )
-                );
+                $servercontrols = $this->get_ldap_controls($this->config, $ldapcookie);
             }
 
             // Search only in this context.
@@ -1096,5 +1072,26 @@ EOQ;
         $this->ldap_close(true);
         // We were able to connect successfuly.
         echo $OUTPUT->notification(get_string('connectingldapsuccess', 'auth_ldap'), \core\output\notification::NOTIFY_SUCCESS);
+    }
+
+    /**
+     * Creates LDAP Controls that allow for result pagination.
+     * @param object $config the plugin configuration
+     * @param string $ldapcookie the LDAP cookie
+     * @return array the Controls
+     * @link https://www.php.net/manual/en/ldap.examples-controls.php
+     * @link https://www.php.net/manual/en/ldap.controls.php
+     */
+    protected function get_ldap_controls(object $config, string $ldapcookie): array
+    {
+        return [
+            [
+                'oid' => LDAP_CONTROL_PAGEDRESULTS,
+                'value' => [
+                    'size' => $config->pagesize,
+                    'cookie' => $ldapcookie,
+                ]
+            ]
+        ];
     }
 }
