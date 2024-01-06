@@ -263,11 +263,7 @@ class importer {
                         $context,
                         $filter,
                         array('uid', $this->config->user_attribute, 'createtimestamp', 'modifytimestamp'),
-                        0,
-                        -1,
-                        -1,
-                        0,
-                        $servercontrols
+                        controls: $servercontrols
                     );
                 } else {
                     // Search only in this context.
@@ -276,11 +272,7 @@ class importer {
                         $context,
                         $filter,
                         array('uid', $this->config->user_attribute, 'createtimestamp', 'modifytimestamp'),
-                        0,
-                        -1,
-                        -1,
-                        0,
-                        $servercontrols
+                        controls: $servercontrols
                     );
                 }
                 if(!$ldap_result) {
@@ -420,11 +412,7 @@ class importer {
                         $context,
                         $filter,
                         array($this->config->user_attribute),
-                        0,
-                        -1,
-                        -1,
-                        0,
-                        $servercontrols
+                        controls: $servercontrols
                     );
                 } else {
                     // Search only in this context.
@@ -433,11 +421,7 @@ class importer {
                         $context,
                         $filter,
                         array($this->config->user_attribute),
-                        0,
-                        -1,
-                        -1,
-                        0,
-                        $servercontrols
+                        controls: $servercontrols
                     );
                 }
                 if(!$ldap_result) {
@@ -571,8 +555,7 @@ class importer {
             }
 
             // Search only in this context.
-            $ldapResults = ldap_list($ldap, $this->config->contexts, $filter, $search_attribs,
-                                     0, -1, -1, LDAP_DEREF_NEVER, $servercontrols);
+            $ldapResults = ldap_list($ldap, $this->config->contexts, $filter, $search_attribs, controls: $servercontrols);
             if (!$ldapResults) {
                 continue;
             }
