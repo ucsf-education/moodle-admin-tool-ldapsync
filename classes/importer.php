@@ -245,6 +245,7 @@ class importer {
         $ldap_users = array();
         $ldap_cookie = '';
         $ldap_pagedresults = ldap_paged_results_supported($this->config->ldap_version, $ldapconnection);
+        $servercontrols = array();
         foreach ($contexts as $context) {
             $context = trim($context);
             if (empty($context)) {
@@ -253,20 +254,37 @@ class importer {
 
             do {
                 if ($ldap_pagedresults) {
-                    ldap_control_paged_result($ldapconnection, $this->config->pagesize, true, $ldap_cookie);
+                    $servercontrols = $this->get_ldap_controls($this->config, $ldap_cookie);
                 }
                 if ($this->config->search_sub) {
                     // Use ldap_search to find first user from subtree.
-                    $ldap_result = ldap_search($ldapconnection, $context, $filter, array('uid', $this->config->user_attribute, 'createtimestamp', 'modifytimestamp'));
+                    $ldap_result = ldap_search(
+                        $ldapconnection,
+                        $context,
+                        $filter,
+                        array('uid', $this->config->user_attribute, 'createtimestamp', 'modifytimestamp'),
+                        controls: $servercontrols
+                    );
                 } else {
                     // Search only in this context.
-                    $ldap_result = ldap_list($ldapconnection, $context, $filter, array('uid', $this->config->user_attribute, 'createtimestamp', 'modifytimestamp'));
+                    $ldap_result = ldap_list(
+                        $ldapconnection,
+                        $context,
+                        $filter,
+                        array('uid', $this->config->user_attribute, 'createtimestamp', 'modifytimestamp'),
+                        controls: $servercontrols
+                    );
                 }
                 if(!$ldap_result) {
                     continue;
                 }
                 if ($ldap_pagedresults) {
-                    ldap_control_paged_result_response($ldapconnection, $ldap_result, $ldap_cookie);
+                    // Get next cookie from controls.
+                    ldap_parse_result($ldapconnection, $ldap_result, $errcode, $matcheddn,
+                        $errmsg, $referrals, $controls);
+                    if (isset($controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'])) {
+                        $ldap_cookie = $controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'];
+                    }
                 }
                 $users = ldap_get_entries_moodle($ldapconnection, $ldap_result);
                 // Add found users to list.
@@ -382,24 +400,42 @@ class importer {
             if (empty($context)) {
                 continue;
             }
-
+            $servercontrols = array();
             do {
                 if ($ldap_pagedresults) {
-                    ldap_control_paged_result($ldapconnection, $this->config->pagesize, true, $ldap_cookie);
+                    $servercontrols = $this->get_ldap_controls($this->config, $ldap_cookie);
                 }
                 if ($this->config->search_sub) {
                     // Use ldap_search to find first user from subtree.
-                    $ldap_result = ldap_search($ldapconnection, $context, $filter, array($this->config->user_attribute));
+                    $ldap_result = ldap_search(
+                        $ldapconnection,
+                        $context,
+                        $filter,
+                        array($this->config->user_attribute),
+                        controls: $servercontrols
+                    );
                 } else {
                     // Search only in this context.
-                    $ldap_result = ldap_list($ldapconnection, $context, $filter, array($this->config->user_attribute));
+                    $ldap_result = ldap_list(
+                        $ldapconnection,
+                        $context,
+                        $filter,
+                        array($this->config->user_attribute),
+                        controls: $servercontrols
+                    );
                 }
                 if(!$ldap_result) {
                     continue;
                 }
                 if ($ldap_pagedresults) {
-                    ldap_control_paged_result_response($ldapconnection, $ldap_result, $ldap_cookie);
+                    // Get next cookie from controls.
+                    ldap_parse_result($ldapconnection, $ldap_result, $errcode, $matcheddn,
+                        $errmsg, $referrals, $controls);
+                    if (isset($controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'])) {
+                        $ldap_cookie = $controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'];
+                    }
                 }
+
                 $users = ldap_get_entries_moodle($ldapconnection, $ldap_result);
                 // Add found users to list.
                 for ($i = 0; $i < count($users); $i++) {
@@ -515,47 +551,20 @@ class importer {
 
         do {
             if ($ldappagedresults) {
-                // TODO: Remove the old branch of code once PHP 7.3.0 becomes required (Moodle 3.11).
-                if (version_compare(PHP_VERSION, '7.3.0', '<')) {
-                    // Before 7.3, use this function that was deprecated in PHP 7.4.
-                    ldap_control_paged_result($ldap, $this->config->pagesize, true, $ldapcookie);
-                } else {
-                    // PHP 7.3 and up, use server controls.
-                    $servercontrols = array(array(
-                        'oid' => LDAP_CONTROL_PAGEDRESULTS, 'value' => array(
-                            'size' => $this->config->pagesize, 'cookie' => $ldapcookie)));
-                }
-
+                $servercontrols = $this->get_ldap_controls($this->config, $ldapcookie);
             }
 
             // Search only in this context.
-            // TODO: Remove the old branch of code once PHP 7.3.0 becomes required (Moodle 3.11).
-            if (version_compare(PHP_VERSION, '7.3.0', '<')) {
-                $ldapResults = ldap_list($ldap, $this->config->contexts, $filter, $search_attribs); // we only wanna go down 1 lvl into the directory tree
-            } else {
-                $ldapResults = ldap_list($ldap, $this->config->contexts, $filter, $search_attribs,
-                                         0, -1, -1, LDAP_DEREF_NEVER, $servercontrols);
-            }
+            $ldapResults = ldap_list($ldap, $this->config->contexts, $filter, $search_attribs, controls: $servercontrols);
             if (!$ldapResults) {
                 continue;
             }
             if ($ldappagedresults) {
-                // TODO: Remove the old branch of code once PHP 7.3.0 becomes required (Moodle 3.11).
-                if (version_compare(PHP_VERSION, '7.3.0', '<')) {
-                    // Before 7.3, use this function that was deprecated in PHP 7.4.
-                    $pagedresp = ldap_control_paged_result_response($ldap, $ldapResults, $ldapcookie);
-                    // Function ldap_control_paged_result_response() does not overwrite $ldapcookie if it fails, by
-                    // setting this to null we avoid an infinite loop.
-                    if ($pagedresp === false) {
-                        $ldapcookie = null;
-                    }
-                } else {
-                    // Get next cookie from controls.
-                    ldap_parse_result($ldap, $ldapResults, $errcode, $matcheddn,
-                                      $errmsg, $referrals, $controls);
-                    if (isset($controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'])) {
-                        $ldapcookie = $controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'];
-                    }
+                // Get next cookie from controls.
+                ldap_parse_result($ldap, $ldapResults, $errcode, $matcheddn,
+                                  $errmsg, $referrals, $controls);
+                if (isset($controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'])) {
+                    $ldapcookie = $controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'];
                 }
             }
 
@@ -1046,5 +1055,26 @@ EOQ;
         $this->ldap_close(true);
         // We were able to connect successfuly.
         echo $OUTPUT->notification(get_string('connectingldapsuccess', 'auth_ldap'), \core\output\notification::NOTIFY_SUCCESS);
+    }
+
+    /**
+     * Creates LDAP Controls that allow for result pagination.
+     * @param object $config the plugin configuration
+     * @param string $ldapcookie the LDAP cookie
+     * @return array the Controls
+     * @link https://www.php.net/manual/en/ldap.examples-controls.php
+     * @link https://www.php.net/manual/en/ldap.controls.php
+     */
+    protected function get_ldap_controls(object $config, string $ldapcookie): array
+    {
+        return [
+            [
+                'oid' => LDAP_CONTROL_PAGEDRESULTS,
+                'value' => [
+                    'size' => $config->pagesize,
+                    'cookie' => $ldapcookie,
+                ]
+            ]
+        ];
     }
 }
