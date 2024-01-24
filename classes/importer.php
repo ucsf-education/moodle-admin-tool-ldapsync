@@ -308,8 +308,8 @@ class importer {
                         $modifytimestamp = 0;
                     }
 
-                    $select = sprintf("%s = :uid", $DB->sql_compare_text('uid'));
-                    if ($rs = $DB->get_record_select('tool_ldapsync', $select, array('uid' => "$uid"))) {
+                    $select = sprintf("%s = :cn", $DB->sql_compare_text('cn'));
+                    if ($rs = $DB->get_record_select('tool_ldapsync', $select, array('cn' => "$cn"))) {
                         $rs->uid = $uid;
                         $rs->cn = $cn;
                         $rs->createtimestamp = $createtimestamp;
