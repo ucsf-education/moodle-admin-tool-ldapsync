@@ -29,7 +29,6 @@ namespace tool_ldapsync\task;
  *
  */
 class update_task extends \core\task\scheduled_task {
-
     /**
      * Get a descriptive name for this task (shown to admins).
      *
@@ -49,8 +48,7 @@ class update_task extends \core\task\scheduled_task {
         $ldapusers = $sync->load_ldap_data_to_table();
 
         if (!empty($ldapusers)) {
-            echo "A total of ". count($ldapusers) . " active users found on LDAP.";
+            echo "A total of " . count($ldapusers) . " active users found on LDAP.";
         }
     }
-
 }

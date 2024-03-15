@@ -24,10 +24,10 @@
 
 define('NO_OUTPUT_BUFFERING', true);
 require_once('../../../config.php');
-require_once($CFG->libdir.'/adminlib.php');
-require_once($CFG->libdir.'/dataformatlib.php');
-require_once($CFG->dirroot.'/user/lib.php');
-require_once($CFG->dirroot.'/user/profile/lib.php');
+require_once($CFG->libdir . '/adminlib.php');
+require_once($CFG->libdir . '/dataformatlib.php');
+require_once($CFG->dirroot . '/user/lib.php');
+require_once($CFG->dirroot . '/user/profile/lib.php');
 
 $dataformat = optional_param('dataformat', '', PARAM_ALPHA);
 
@@ -39,20 +39,20 @@ if (empty($SESSION->ufiltering)) {
 }
 
 $ufiltering = unserialize($SESSION->ufiltering);
-$bulk_users = array();
+$bulkusers = [];
 
-list($sqlwhere, $params) = $ufiltering->get_sql_filter("id<>:exguest AND deleted <> 1", array('exguest'=>$CFG->siteguest));
+[$sqlwhere, $params] = $ufiltering->get_sql_filter("id<>:exguest AND deleted <> 1", ['exguest' => $CFG->siteguest]);
 
-$rs = $DB->get_recordset_select('user', $sqlwhere, $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname');
+$rs = $DB->get_recordset_select('user', $sqlwhere, $params, 'fullname', 'id,' . $DB->sql_fullname() . ' AS fullname');
 foreach ($rs as $user) {
-    if (!isset($bulk_users[$user->id])) {
-        $bulk_users[$user->id] = $user->id;
+    if (!isset($bulkusers[$user->id])) {
+        $bulkusers[$user->id] = $user->id;
     }
 }
 $rs->close();
 
 if ($dataformat) {
-    $fields = array('id'        => 'id',
+    $fields = ['id'        => 'id',
                     'username'  => 'username',
                     'email'     => 'email',
                     'firstname' => 'firstname',
@@ -69,32 +69,32 @@ if ($dataformat) {
                     'aim'       => 'aim',
                     'yahoo'     => 'yahoo',
                     'msn'       => 'msn',
-                    'country'   => 'country');
+                    'country'   => 'country'];
 
     if ($extrafields = $DB->get_records('user_info_field')) {
         foreach ($extrafields as $n => $field) {
-            $fields['profile_field_'.$field->shortname] = 'profile_field_'.$field->shortname;
-            require_once($CFG->dirroot.'/user/profile/field/'.$field->datatype.'/field.class.php');
+            $fields['profile_field_' . $field->shortname] = 'profile_field_' . $field->shortname;
+            require_once($CFG->dirroot . '/user/profile/field/' . $field->datatype . '/field.class.php');
         }
     }
 
     $filename = clean_filename(get_string('users'));
 
-    $downloadusers = new ArrayObject($bulk_users);
+    $downloadusers = new ArrayObject($bulkusers);
     $iterator = $downloadusers->getIterator();
 
-    download_as_dataformat($filename, $dataformat, $fields, $iterator, function($userid) use ($extrafields, $fields) {
+    download_as_dataformat($filename, $dataformat, $fields, $iterator, function ($userid) use ($extrafields, $fields) {
         global $DB;
-        $row = array();
-        if (!$user = $DB->get_record('user', array('id' => $userid))) {
+        $row = [];
+        if (!$user = $DB->get_record('user', ['id' => $userid])) {
             return null;
         }
         foreach ($extrafields as $field) {
-            $newfield = 'profile_field_'.$field->datatype;
+            $newfield = 'profile_field_' . $field->datatype;
             $formfield = new $newfield($field->id, $user->id);
             $formfield->edit_load_user_data($user);
         }
-        $userprofiledata = array();
+        $userprofiledata = [];
         foreach ($fields as $field => $unused) {
             // Custom user profile textarea fields come in an array
             // The first element is the text and the second is the format.

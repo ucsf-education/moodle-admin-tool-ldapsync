@@ -26,8 +26,7 @@
  * define('TEST_AUTH_LDAP_BIND_PW', 'somepassword');
  * define('TEST_AUTH_LDAP_DOMAIN', 'dc=example,dc=local');
  *
- * @package    tool_ldapsync
- * @category   phpunit
+ * @package    phpunit\tool_ldapsync
  * @copyright  Copyright (c) 2019, UCSF Center for Knowledge Management
  * @author     2019 Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -35,130 +34,129 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer
-{
-    public function updateMoodleAccounts(array $data)
-    {
+/**
+ * Testable object for the importer
+ */
+class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
+    public function updatemoodleaccounts(array $data) {
         return $this->_updateMoodleAccounts($data);
     }
 }
-
-class tool_ldapsync_importer_testcase extends advanced_testcase
-{
+/**
+ * Test case for ldapsync importer
+ */
+class tool_ldapsync_importer_testcase extends advanced_testcase {
     private $sync = null;
 
-    protected function setUp()
-    {
-        $gmtTs = strtotime('2000-01-01 00:00:00');
-        $this->sync = new Testable_tool_ldapsync_importer($gmtTs);
+    protected function setUp() {
+        $gmtts = strtotime('2000-01-01 00:00:00');
+        $this->sync = new Testable_tool_ldapsync_importer($gmtts);
 
         ob_start();
     }
 
-    protected function tearDown()
-    {
+    protected function tearDown() {
         ob_end_clean();
     }
 
-    public function testUpdateMoodleAccountsWithApostrophesAndDashes()
-    {
+    public function testupdatemoodleaccountswithapostrophesanddashes() {
         global $DB;
         $this->resetAfterTest(true);
 
-        $data = array( array(
+        $data = [ [
                              "uid" => "1",
                              "givenname" => "Jane",
                              "sn" => "Doe",
                              "mail" => "Jane.Doe@example.com",
                              "ucsfeduidnumber" => "011234569",
                              "edupersonprincipalname" => "123456@example.com",
-                             "ucsfedupreferredgivenname" => ""
-                             ),
-                       array(
+                             "ucsfedupreferredgivenname" => "",
+                             ],
+                       [
                              "uid" => "2",
                              "givenname" => "John",
                              "sn" => "Doe",
                              "mail" => "John.Doe@example.com",
                              "ucsfeduidnumber" => "122345670",
                              "edupersonprincipalname" => "234567@example.com",
-                             "ucsfedupreferredgivenname" => ""
-                             ),
-                       array(
+                             "ucsfedupreferredgivenname" => "",
+                             ],
+                       [
                              "uid" => "3",
                              "givenname" => "Joseph",
                              "sn" => "O'Reilly",
                              "mail" => "Joseph.O'Reilly@example.com",
                              "ucsfeduidnumber" => "023456787",
                              "edupersonprincipalname" => "345678@example.com",
-                             "ucsfedupreferredgivenname" => "Joe"
-                             )
-                       );
+                             "ucsfedupreferredgivenname" => "Joe",
+                             ],
+                       ];
 
-        $expectedFinalCount = $DB->count_records('user') + count($data);
+        $expectedfinalcount = $DB->count_records('user') + count($data);
 
         $this->sync->updateMoodleAccounts($data);
-        $finalCount = $DB->count_records('user');
+        $finalcount = $DB->count_records('user');
 
-        $this->assertEquals($expectedFinalCount, $finalCount);
+        $this->assertEquals($expectedfinalcount, $finalcount);
 
         foreach ($data as $user) {
-            $record = $DB->get_record('user', array('idnumber' => $user['ucsfeduidnumber']));
+            $record = $DB->get_record('user', ['idnumber' => $user['ucsfeduidnumber']]);
 
-            if ($user['ucsfedupreferredgivenname'] === '')
+            if ($user['ucsfedupreferredgivenname'] === '') {
                 $this->assertEquals($user['givenname'], $record->firstname);
-            else
+            } else {
                 $this->assertEquals($user['ucsfedupreferredgivenname'], $record->firstname);
+            }
 
             $this->assertEquals($user['sn'], $record->lastname);
             $this->assertEquals($user['mail'], $record->email);
         }
 
         // Test update existing record with dashes
-        $data = array( array(
+        $data = [ [
                              "uid" => "1",
                              "givenname" => "Jane",
                              "sn" => "Doe-O'Reilly",
                              "mail" => "Jane.Doe-O'Reilly@example.com",
                              "ucsfeduidnumber" => "011234569",
                              "edupersonprincipalname" => "123456@example.com",
-                             "ucsfedupreferredgivenname" => ""
-                             ) );
-        $expectedFinalCount = $DB->count_records('user');
+                             "ucsfedupreferredgivenname" => "",
+                             ] ];
+        $expectedfinalcount = $DB->count_records('user');
         $this->sync->updateMoodleAccounts($data);
-        $finalCount = $DB->count_records('user');
-        $this->assertEquals($expectedFinalCount, $finalCount);
+        $finalcount = $DB->count_records('user');
+        $this->assertEquals($expectedfinalcount, $finalcount);
 
         foreach ($data as $user) {
-            $record = $DB->get_record('user', array('idnumber' => $user['ucsfeduidnumber']));
+            $record = $DB->get_record('user', ['idnumber' => $user['ucsfeduidnumber']]);
             $this->assertEquals($user['givenname'], $record->firstname);
             $this->assertEquals($user['sn'], $record->lastname);
             $this->assertEquals($user['mail'], $record->email);
         }
     }
 
-    public function testAddingNewUserWithOurDefaultValuesSet()
-    {
+    public function testaddingnewuserwithourdefaultvaluesset() {
         global $DB;
         $this->resetAfterTest(true);
 
-        $data = array( array( "uid" => 1,
+        $data = [ [ "uid" => 1,
                               "givenname" => "John",
                               "sn" => "Doe",
                               "mail" => "John.Doe@example.com",
                               "ucsfeduidnumber" => "991234569",
                               "edupersonprincipalname" => "123456@example.com",
-                              "ucsfedupreferredgivenname" => "") );
+                              "ucsfedupreferredgivenname" => ""] ];
 
-        $expectedFinalCount = $DB->count_records('user') + count($data);
+        $expectedfinalcount = $DB->count_records('user') + count($data);
 
         $this->sync->updateMoodleAccounts($data);
 
-        $finalCount = $DB->count_records('user');
+        $finalcount = $DB->count_records('user');
 
-        $this->assertEquals($expectedFinalCount, $finalCount);
+        $this->assertEquals($expectedfinalcount, $finalcount);
 
         foreach ($data as $user) {
-            $record = $DB->get_record('user', array('idnumber' => $user['ucsfeduidnumber']));
+            $record = $DB->get_record('user', ['idnumber' => $user['ucsfeduidnumber']]);
             $this->assertEquals($user['givenname'], $record->firstname);
             $this->assertEquals($user['sn'], $record->lastname);
             $this->assertEquals($user['mail'], $record->email);
@@ -167,92 +165,87 @@ class tool_ldapsync_importer_testcase extends advanced_testcase
         }
     }
 
-    public function testUserWithEmptyEPPNShouldBeSkipped()
-    {
+    public function testuserwithemptyeppnshouldbeskipped() {
         global $DB;
         $this->resetAfterTest(true);
 
-        $data = array( array(
+        $data = [ [
                              "uid" => "1",
                              "givenname" => "Jane",
                              "sn" => "Doe",
                              "mail" => "Jane.Doe@example.com",
                              "ucsfeduidnumber" => "011234569",
                              "edupersonprincipalname" => "",
-                             "ucsfedupreferredgivenname" => ""
-                             ),
-                       array(
+                             "ucsfedupreferredgivenname" => "",
+                             ],
+                       [
                              "uid" => "2",
                              "givenname" => "John",
                              "sn" => "Doe",
                              "mail" => "John.Doe@example.com",
                              "ucsfeduidnumber" => "122345670",
                              "edupersonprincipalname" => "",
-                             "ucsfedupreferredgivenname" => ""
-                             ),
-                       array(
+                             "ucsfedupreferredgivenname" => "",
+                             ],
+                       [
                              "uid" => "3",
                              "givenname" => "Joseph",
                              "sn" => "O'Reilly",
                              "mail" => "Joseph.O'Reilly@example.com",
                              "ucsfeduidnumber" => "023456787",
                              "edupersonprincipalname" => "345678@example.com",
-                             "ucsfedupreferredgivenname" => "Joe"
-                             )
-                       );
+                             "ucsfedupreferredgivenname" => "Joe",
+                             ],
+                       ];
 
-        $expectedFinalCount = $DB->count_records('user') + 1;
+        $expectedfinalcount = $DB->count_records('user') + 1;
 
         $this->sync->updateMoodleAccounts($data);
 
-        $finalCount = $DB->count_records('user');
+        $finalcount = $DB->count_records('user');
 
-        $this->assertEquals($expectedFinalCount, $finalCount);
-
+        $this->assertEquals($expectedfinalcount, $finalcount);
     }
 
-    public function testSkippingAllUsersWillNotGenerateError()
-    {
+    public function testskippingalluserswillnotgenerateerror() {
         global $DB;
         $this->resetAfterTest(true);
 
-        $data = array( array(
+        $data = [ [
                              "uid" => "1",
                              "givenname" => "Jane",
                              "sn" => "Doe",
                              "mail" => "Jane.Doe@example.com",
                              "ucsfeduidnumber" => "011234569",
                              "edupersonprincipalname" => "",
-                             "ucsfedupreferredgivenname" => ""
-                             ),
-                       array(
+                             "ucsfedupreferredgivenname" => "",
+                             ],
+                       [
                              "uid" => "2",
                              "givenname" => "John",
                              "sn" => "Doe",
                              "mail" => "John.Doe@example.com",
                              "ucsfeduidnumber" => "122345670",
                              "edupersonprincipalname" => "",
-                             "ucsfedupreferredgivenname" => ""
-                             ),
-                       array(
+                             "ucsfedupreferredgivenname" => "",
+                             ],
+                       [
                              "uid" => "3",
                              "givenname" => "Joseph",
                              "sn" => "O'Reilly",
                              "mail" => "Joseph.O'Reilly@example.com",
                              "ucsfeduidnumber" => "023456787",
                              "edupersonprincipalname" => "",
-                             "ucsfedupreferredgivenname" => "Joe"
-                             )
-                       );
+                             "ucsfedupreferredgivenname" => "Joe",
+                             ],
+                       ];
 
-        $expectedFinalCount = $DB->count_records('user');
+        $expectedfinalcount = $DB->count_records('user');
 
         $this->sync->updateMoodleAccounts($data);
 
-        $finalCount = $DB->count_records('user');
+        $finalcount = $DB->count_records('user');
 
-        $this->assertEquals($expectedFinalCount, $finalCount);
-
+        $this->assertEquals($expectedfinalcount, $finalcount);
     }
-
 }

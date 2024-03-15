@@ -17,18 +17,21 @@
 /**
  * This file contains the User Filter API.
  *
- * @package   tool
- * @category  user
+ * @package   user\tool
  * @copyright Copyright (c) 2020, UCSF Center for Knowledge Management
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_ldapsync;
 
-require_once($CFG->dirroot.'/'.$CFG->admin.'/user/lib.php');
+defined('MOODLE_INTERNAL') || die();
 
+require_once($CFG->dirroot . '/' . $CFG->admin . '/user/lib.php');
+
+/**
+ * Inherits user_filtering to add new fields to filter
+ */
 class user_filtering extends \user_filtering {
-
     /**
      * Creates known user filter if present
      * @param string $fieldname
@@ -39,8 +42,10 @@ class user_filtering extends \user_filtering {
         global $USER, $CFG, $DB, $SITE;
 
         switch ($fieldname) {
-            case 'timecreated': return new \user_filter_date('timecreated', get_string('createdtime', 'tool_ldapsync'), $advanced, 'timecreated');
-            case 'activeonldap':   return new user_filter_activeonldap('activeonldap', get_string('activeonldap', 'tool_ldapsync'), $advanced, 'activeonldap');
+            case 'timecreated':
+                return new \user_filter_date('timecreated', get_string('createdtime', 'tool_ldapsync'), $advanced, 'timecreated');
+            case 'activeonldap':
+                return new user_filter_activeonldap('activeonldap', get_string('activeonldap', 'tool_ldapsync'), $advanced, 'activeonldap');
             // case 'additionalldapfilter':    return new \user_filter_text('ldapfilter', get_string('additionalldapfilter', 'tool_ldapsync'), $advanced, 'ldapfilter');
             default:
                 return parent::get_field($fieldname, $advanced);
@@ -55,7 +60,6 @@ class user_filtering extends \user_filtering {
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class user_filter_activeonldap extends \user_filter_yesno {
-
     private $_ldapuserlist = null;
 
     /**
@@ -69,6 +73,6 @@ class user_filter_activeonldap extends \user_filter_yesno {
         $value = $data['value'];
         $not = $value ? '' : 'NOT';
 
-        return array("username $not IN ( SELECT cn FROM {tool_ldapsync} )", array());
+        return ["username $not IN ( SELECT cn FROM {tool_ldapsync} )", []];
     }
 }

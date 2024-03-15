@@ -26,8 +26,7 @@
  * define('TEST_AUTH_LDAP_BIND_PW', 'somepassword');
  * define('TEST_AUTH_LDAP_DOMAIN', 'dc=example,dc=local');
  *
- * @package    tool_ldapsync
- * @category   phpunit
+ * @package    phpunit\tool_ldapsync
  * @copyright  Copyright (c) 2020, UCSF Center for Knowledge Management
  * @author     2020 Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -35,22 +34,22 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-class Testable_tool_ldapsync_importer_for_purgeusers extends \tool_ldapsync\importer
-{
-	public function getUpdatesFromLdap ($ldap, $ldapTimestamp)
-	{
-        return $this->_getUpdatesFromLdap($ldap, $ldapTimestamp);
+/**
+ * Testable object for the importer
+ */
+class Testable_tool_ldapsync_importer_for_purgeusers extends \tool_ldapsync\importer {
+    public function getupdatesfromldap($ldap, $ldaptimestamp) {
+        return $this->_getUpdatesFromLdap($ldap, $ldaptimestamp);
     }
-
 }
-
+/**
+ * Test case for purgeusers
+ */
 class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
-
     private $sync = null;
-    private $ldapConn = null;
+    private $ldapconn = null;
 
-    protected function setUp()
-    {
+    protected function setUp() {
         global $CFG;
 
         $this->resetAfterTest();
@@ -59,41 +58,44 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
             $this->markTestSkipped('LDAP extension is not loaded.');
         }
 
-        if (!defined('TEST_TOOL_LDAPSYNC_HOST_URL') or !defined('TEST_TOOL_LDAPSYNC_BIND_DN') or !defined('TEST_TOOL_LDAPSYNC_BIND_PW') or !defined('TEST_TOOL_LDAPSYNC_DOMAIN')) {
+        if (!defined('TEST_TOOL_LDAPSYNC_HOST_URL') || !defined('TEST_TOOL_LDAPSYNC_BIND_DN') || !defined('TEST_TOOL_LDAPSYNC_BIND_PW') || !defined('TEST_TOOL_LDAPSYNC_DOMAIN')) {
             $this->markTestSkipped('External LDAP test server not configured.');
         }
 
-        require_once($CFG->libdir.'/ldaplib.php');
+        require_once($CFG->libdir . '/ldaplib.php');
 
         // Make sure we can connect the server.
         $debuginfo = '';
-        if (!$connection = ldap_connect_moodle(TEST_TOOL_LDAPSYNC_HOST_URL, 3, 'rfc2307', TEST_TOOL_LDAPSYNC_BIND_DN, TEST_TOOL_LDAPSYNC_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false)) {
-            $this->markTestSkipped('Can not connect to LDAP test server: '.$debuginfo);
+        if (!$connection = ldap_connect_moodle( TEST_TOOL_LDAPSYNC_HOST_URL, 3, 'rfc2307',
+                                                TEST_TOOL_LDAPSYNC_BIND_DN,
+                                                TEST_TOOL_LDAPSYNC_BIND_PW,
+                                                LDAP_DEREF_NEVER, $debuginfo, false)) {
+            $this->markTestSkipped('Can not connect to LDAP test server: ' . $debuginfo);
         }
 
         $this->ldapConn = $connection;
 
         // Create new empty test container.
-        $topdn = 'dc=moodletest,'.TEST_TOOL_LDAPSYNC_DOMAIN;
+        $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
 
         // Let tearDown() handle it.
         $this->recursive_delete($this->ldapConn, TEST_TOOL_LDAPSYNC_DOMAIN, 'dc=moodletest');
 
-        $o = array();
-        $o['objectClass'] = array('dcObject', 'organizationalUnit');
+        $o = [];
+        $o['objectClass'] = ['dcObject', 'organizationalUnit'];
         $o['dc']         = 'moodletest';
         $o['ou']         = 'MOODLETEST';
-        if (!ldap_add($this->ldapConn, 'dc=moodletest,'.TEST_AUTH_LDAP_DOMAIN, $o)) {
+        if (!ldap_add($this->ldapConn, 'dc=moodletest,' . TEST_AUTH_LDAP_DOMAIN, $o)) {
             $this->markTestSkipped('Can not create test LDAP container.');
         }
 
         // Create an ou for users.
-        $o = array();
-        $o['objectClass'] = array('organizationalUnit');
+        $o = [];
+        $o['objectClass'] = ['organizationalUnit'];
         $o['ou']          = 'users';
-        ldap_add($this->ldapConn, 'ou='.$o['ou'].','.$topdn, $o);
+        ldap_add($this->ldapConn, 'ou=' . $o['ou'] . ',' . $topdn, $o);
 
-        $gmtTs = strtotime('2000-01-01 00:00:00');
+        $gmtts = strtotime('2000-01-01 00:00:00');
 
         // Configure the plugin a bit.
         set_config('host_url', TEST_TOOL_LDAPSYNC_HOST_URL, 'tool_ldapsync');
@@ -102,7 +104,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         set_config('bind_dn', TEST_TOOL_LDAPSYNC_BIND_DN, 'tool_ldapsync');
         set_config('bind_pw', TEST_TOOL_LDAPSYNC_BIND_PW, 'tool_ldapsync');
         set_config('user_type', 'rfc2307', 'tool_ldapsync');
-        set_config('contexts', 'ou=users,'.$topdn, 'tool_ldapsync');
+        set_config('contexts', 'ou=users,' . $topdn, 'tool_ldapsync');
         set_config('opt_deref', LDAP_DEREF_NEVER, 'tool_ldapsync');
         // set_config('user_attribute', 'eduPersonPrincipalName', 'tool_ldapsync');
         set_config('user_attribute', 'edupersonprincipalname', 'tool_ldapsync');
@@ -128,13 +130,12 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         set_config('field_updateremote_idnumber', '0', 'tool_ldapsync');
         set_config('field_lock_idnumber', 'unlocked', 'tool_ldapsync');
 
-        $this->sync = new Testable_tool_ldapsync_importer_for_purgeusers($gmtTs);
+        $this->sync = new Testable_tool_ldapsync_importer_for_purgeusers($gmtts);
 
         ob_start();
     }
 
-    protected function tearDown()
-    {
+    protected function tearDown() {
         if (!$this->ldapConn) {
             $this->recursive_delete($this->ldapConn, TEST_TOOL_LDAPSYNC_DOMAIN, 'dc=moodletest');
             ldap_close($this->ldapConn);
@@ -149,10 +150,8 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
     /**
      * @group ldaptests
      */
-    public function testCheckIfUsersInLdap()
-    {
+    public function testcheckifusersinldap() {
         try {
-
             $ldap = $this->sync->ldap_connect();
         } catch (Exception $e) {
             $this->markTestIncomplete($e->getMessage());
@@ -160,10 +159,10 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         $this->assertEquals('ldap link', get_resource_type($ldap));
 
         // Create a few users
-        $topdn = 'dc=moodletest,'.TEST_TOOL_LDAPSYNC_DOMAIN;
-        for ($i=1; $i<=5; $i++) {
+        $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
+        for ($i = 1; $i <= 5; $i++) {
             $this->create_ldap_user($this->ldapConn, $topdn, $i);
-            $this->assertTrue($this->sync->check_users_in_ldap('00000'.$i.'@ucsf.edu'));
+            $this->assertTrue($this->sync->check_users_in_ldap('00000' . $i . '@ucsf.edu'));
         }
 
         $this->assertFalse($this->sync->check_users_in_ldap('000006@ucsf.edu'));
@@ -175,11 +174,10 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
     /**
      * @group ldaptests
      */
-    public function testSetDeletedFlagForNeverLoginUsers()
-    {
+    public function testsetdeletedflagforneverloginusers() {
         global $CFG;
 
-        require_once($CFG->dirroot.'/user/lib.php');
+        require_once($CFG->dirroot . '/user/lib.php');
 
         $user = new stdClass();
         $user->modified = time();
@@ -194,12 +192,12 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
 
         $id = user_create_user($user, false);
 
-        $this->assertTrue( $id > 0 );
+        $this->assertTrue($id > 0);
 
         $user->id = $id;
-        $this->sync->delete_never_login( $user );
+        $this->sync->delete_never_login($user);
 
-        $userslist = user_get_users_by_id(array($id));
+        $userslist = user_get_users_by_id([$id]);
 
         $this->assertEquals(1, $userslist[$id]->deleted);
 
@@ -209,12 +207,12 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
 
         $id = user_create_user($user, false);
 
-        $this->assertTrue( $id > 0 );
+        $this->assertTrue($id > 0);
 
         $user->id = $id;
-        $this->sync->delete_never_login( $user );
+        $this->sync->delete_never_login($user);
 
-        $userslist = user_get_users_by_id(array($id));
+        $userslist = user_get_users_by_id([$id]);
 
         $this->assertEquals(0, $userslist[$id]->deleted);
     }
@@ -223,11 +221,11 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
     /**
      * @group ldaptests
      */
-    public function testIsUserEnrolledInAnyCourse() {
+    public function testisuserenrolledinanycourse() {
         global $CFG, $DB;
         $this->resetAfterTest(true);
 
-        require_once($CFG->dirroot.'/user/lib.php');
+        require_once($CFG->dirroot . '/user/lib.php');
         // require_once($CFG->dirroot.'/lib/enrollib.php');
 
         $user = new stdClass();
@@ -243,7 +241,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
 
         $id = user_create_user($user, false);
 
-        $this->assertTrue( $id > 0 );
+        $this->assertTrue($id > 0);
 
         $user->id = $id;
 
@@ -262,46 +260,45 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
 
         $created = create_course($course);
 
-        $this->assertTrue( empty( enrol_get_users_courses($user->id) ) );
+        $this->assertTrue(empty(enrol_get_users_courses($user->id)));
 
-        $this->assertTrue( enrol_try_internal_enrol( $created->id, $user->id ) );
+        $this->assertTrue(enrol_try_internal_enrol($created->id, $user->id));
 
-        $this->assertFalse( empty( enrol_get_users_courses($user->id) ) );
-
+        $this->assertFalse(empty(enrol_get_users_courses($user->id)));
     }
 
     protected function create_ldap_user($connection, $topdn, $i) {
-        $o = array();
+        $o = [];
         // $o['objectClass']   = array('inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount');
-        $o['objectClass']   = array('inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount', 'eduPerson', 'ucsfEduPerson');
-        $o['cn']            = 'username'.$i;
-        $o['sn']            = 'Lastname'.$i;
-        $o['givenName']     = 'Firstname'.$i;
+        $o['objectClass']   = ['inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount', 'eduPerson', 'ucsfEduPerson'];
+        $o['cn']            = 'username' . $i;
+        $o['sn']            = 'Lastname' . $i;
+        $o['givenName']     = 'Firstname' . $i;
         $o['uid']           = $o['cn'];
-        $o['uidnumber']     = 2000+$i;
-        $o['gidNumber']     = 1000+$i;
+        $o['uidnumber']     = 2000 + $i;
+        $o['gidNumber']     = 1000 + $i;
         $o['homeDirectory'] = '/';
-        $o['mail']          = 'user'.$i.'@example.com';
-        $o['userPassword']  = 'pass'.$i;
-        # UCSF Specifics
-        $o['ucsfEduIDNumber'] = '0200000'.$i.'2';
-        $o['eduPersonPrincipalName'] = '00000'.$i.'@ucsf.edu';
-        $o['ucsfEduPreferredGivenName'] = 'Preferredname'.$i;
+        $o['mail']          = 'user' . $i . '@example.com';
+        $o['userPassword']  = 'pass' . $i;
+        // UCSF Specifics
+        $o['ucsfEduIDNumber'] = '0200000' . $i . '2';
+        $o['eduPersonPrincipalName'] = '00000' . $i . '@ucsf.edu';
+        $o['ucsfEduPreferredGivenName'] = 'Preferredname' . $i;
         $o['eduPersonAffiliation'] = 'member'; // e.g. member, staff, faculty
 
-        ldap_add($connection, 'cn='.$o['cn'].',ou=users,'.$topdn, $o);
+        ldap_add($connection, 'cn=' . $o['cn'] . ',ou=users,' . $topdn, $o);
     }
 
     protected function delete_ldap_user($connection, $topdn, $i) {
-        ldap_delete($connection, 'cn=username'.$i.',ou=users,'.$topdn);
+        ldap_delete($connection, 'cn=username' . $i . ',ou=users,' . $topdn);
     }
 
     protected function recursive_delete($connection, $dn, $filter) {
-        if ($res = ldap_list($connection, $dn, $filter, array('dn'))) {
+        if ($res = ldap_list($connection, $dn, $filter, ['dn'])) {
             $info = ldap_get_entries($connection, $res);
             ldap_free_result($res);
             if ($info['count'] > 0) {
-                if ($res = ldap_search($connection, "$filter,$dn", 'cn=*', array('dn'))) {
+                if ($res = ldap_search($connection, "$filter,$dn", 'cn=*', ['dn'])) {
                     $info = ldap_get_entries($connection, $res);
                     ldap_free_result($res);
                     foreach ($info as $i) {
@@ -310,11 +307,11 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
                         }
                     }
                 }
-                if ($res = ldap_search($connection, "$filter,$dn", 'ou=*', array('dn'))) {
+                if ($res = ldap_search($connection, "$filter,$dn", 'ou=*', ['dn'])) {
                     $info = ldap_get_entries($connection, $res);
                     ldap_free_result($res);
                     foreach ($info as $i) {
-                        if (isset($i['dn']) and $info[0]['dn'] != $i['dn']) {
+                        if (isset($i['dn']) && $info[0]['dn'] != $i['dn']) {
                             ldap_delete($connection, $i['dn']);
                         }
                     }

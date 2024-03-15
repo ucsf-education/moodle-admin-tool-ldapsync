@@ -29,7 +29,6 @@ namespace tool_ldapsync\task;
  *
  */
 class import_task extends \core\task\scheduled_task {
-
     /**
      * Get a descriptive name for this task (shown to admins).
      *
@@ -47,7 +46,5 @@ class import_task extends \core\task\scheduled_task {
 
         $sync = new \tool_ldapsync\importer();
         $sync->run();
-
     }
-
 }

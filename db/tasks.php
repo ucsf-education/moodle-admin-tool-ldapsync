@@ -26,8 +26,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$tasks = array(
-    array(
+$tasks = [
+    [
         'classname' => 'tool_ldapsync\task\import_task',
         'blocking' => 0,
         'minute' => '0',
@@ -35,9 +35,9 @@ $tasks = array(
         'day' => '*',
         'month' => '*',
         'dayofweek' => '*',
-        'disabled' => 1
-    ),
-    array(
+        'disabled' => 1,
+    ],
+    [
         'classname' => 'tool_ldapsync\task\update_task',
         'blocking' => 0,
         'minute' => '0',
@@ -45,6 +45,6 @@ $tasks = array(
         'day' => '*',
         'month' => '*',
         'dayofweek' => '*',
-        'disabled' => 1
-    )
-);
+        'disabled' => 1,
+    ],
+];
