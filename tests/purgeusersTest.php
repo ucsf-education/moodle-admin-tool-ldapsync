@@ -26,7 +26,7 @@
  * define('TEST_AUTH_LDAP_BIND_PW', 'somepassword');
  * define('TEST_AUTH_LDAP_DOMAIN', 'dc=example,dc=local');
  *
- * @package    phpunit\tool_ldapsync
+ * @package    tool_ldapsync
  * @copyright  Copyright (c) 2020, UCSF Center for Knowledge Management
  * @author     2020 Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -66,10 +66,18 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
 
         // Make sure we can connect the server.
         $debuginfo = '';
-        if (!$connection = ldap_connect_moodle( TEST_TOOL_LDAPSYNC_HOST_URL, 3, 'rfc2307',
-                                                TEST_TOOL_LDAPSYNC_BIND_DN,
-                                                TEST_TOOL_LDAPSYNC_BIND_PW,
-                                                LDAP_DEREF_NEVER, $debuginfo, false)) {
+        if (
+            !$connection = ldap_connect_moodle(
+                TEST_TOOL_LDAPSYNC_HOST_URL,
+                3,
+                'rfc2307',
+                TEST_TOOL_LDAPSYNC_BIND_DN,
+                TEST_TOOL_LDAPSYNC_BIND_PW,
+                LDAP_DEREF_NEVER,
+                $debuginfo,
+                false
+            )
+        ) {
             $this->markTestSkipped('Can not connect to LDAP test server: ' . $debuginfo);
         }
 

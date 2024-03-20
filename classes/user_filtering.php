@@ -17,7 +17,7 @@
 /**
  * This file contains the User Filter API.
  *
- * @package   user\tool
+ * @package   tool_ldapsync
  * @copyright Copyright (c) 2020, UCSF Center for Knowledge Management
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

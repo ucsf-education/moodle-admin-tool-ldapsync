@@ -17,8 +17,7 @@
 /**
  * Strings for component 'tool_ldapsync', language 'en'
  *
- * @package    tool
- * @subpackage ldapsync
+ * @package    tool_ldapsync
  * @author     Carson Tam <carson.tam@ucsf.edu>
  * @copyright  Copyright (c) 2020, UCSF Center for Knowledge Management
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

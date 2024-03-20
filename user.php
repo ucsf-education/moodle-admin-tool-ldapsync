@@ -25,6 +25,7 @@
 
 /**
  * Create a form that is similar to user bulk form to filter users for purging
+ * @package tool_ldapsync
  */
 class ldapsync_purgeusers_action_form extends moodleform {
     private function definition() {
@@ -415,9 +416,11 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
             // delete button
             if (has_capability('moodle/user:delete', $sitecontext)) {
                 // no deleting of self, mnet accounts or admins allowed
-                if (($user->id != $USER->id) &&
+                if (
+                    ($user->id != $USER->id) &&
                     (!is_mnet_remote_user($user)) &&
-                    (!is_siteadmin($user))) {
+                    (!is_siteadmin($user))
+                ) {
                     $url = new moodle_url($returnurl, ['delete' => $user->id, 'sesskey' => sesskey()]);
                     $buttons[] = html_writer::link($url, $OUTPUT->pix_icon('t/delete', $strdelete));
                 }

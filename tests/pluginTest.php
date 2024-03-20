@@ -26,7 +26,7 @@
  * define('TEST_AUTH_LDAP_BIND_PW', 'somepassword');
  * define('TEST_AUTH_LDAP_DOMAIN', 'dc=example,dc=local');
  *
- * @package    phpunit\tool_ldapsync
+ * @package    tool_ldapsync
  * @copyright  Copyright (c) 2019, UCSF Center for Knowledge Management
  * @author     2019 Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -63,10 +63,12 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
             $this->markTestSkipped('LDAP extension is not loaded.');
         }
 
-        if (!defined('TEST_TOOL_LDAPSYNC_HOST_URL')
+        if (
+            !defined('TEST_TOOL_LDAPSYNC_HOST_URL')
             || !defined('TEST_TOOL_LDAPSYNC_BIND_DN')
             || !defined('TEST_TOOL_LDAPSYNC_BIND_PW')
-            || !defined('TEST_TOOL_LDAPSYNC_DOMAIN')) {
+            || !defined('TEST_TOOL_LDAPSYNC_DOMAIN')
+        ) {
             $this->markTestSkipped('External LDAP test server not configured.');
         }
 
@@ -74,10 +76,18 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
         // Make sure we can connect the server.
         $debuginfo = '';
-        if (!$connection = ldap_connect_moodle( TEST_TOOL_LDAPSYNC_HOST_URL, 3, 'rfc2307',
-                                                TEST_TOOL_LDAPSYNC_BIND_DN,
-                                                TEST_TOOL_LDAPSYNC_BIND_PW,
-                                                LDAP_DEREF_NEVER, $debuginfo, false)) {
+        if (
+            !$connection = ldap_connect_moodle(
+                TEST_TOOL_LDAPSYNC_HOST_URL,
+                3,
+                'rfc2307',
+                TEST_TOOL_LDAPSYNC_BIND_DN,
+                TEST_TOOL_LDAPSYNC_BIND_PW,
+                LDAP_DEREF_NEVER,
+                $debuginfo,
+                false
+            )
+        ) {
             $this->markTestSkipped('Can not connect to LDAP test server: ' . $debuginfo);
         }
 
@@ -248,7 +258,8 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
                 $DB->record_exists('user', ['username' => '00000' . $i . '@ucsf.edu',
                                             'email' => 'user' . $i . '@example.com',
                                             'firstname' => 'Preferredname' . $i,
-                                            'lastname' => 'Lastname' . $i]));
+                'lastname' => 'Lastname' . $i])
+            );
         }
 
         // @TODO Purge users

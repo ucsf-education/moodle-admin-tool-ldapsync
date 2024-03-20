@@ -53,6 +53,7 @@ unset($countries);
 
 /**
  * Sort function that can sort last access time
+ * @package tool_ldapsync
  */
 function sort_compare($a, $b) {
     global $sort, $dir;

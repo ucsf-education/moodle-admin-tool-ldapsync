@@ -17,8 +17,7 @@
 /**
  * importer.php
  *
- * @package tool
- * @subpackage ldapsync
+ * @package tool_ldapsync
  * @author Carson Tam <carson.tam@ucsf.edu>
  * @copyright Copyright (c) 2020, UCSF Center for Knowledge Management
  *

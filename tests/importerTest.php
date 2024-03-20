@@ -26,7 +26,7 @@
  * define('TEST_AUTH_LDAP_BIND_PW', 'somepassword');
  * define('TEST_AUTH_LDAP_DOMAIN', 'dc=example,dc=local');
  *
- * @package    phpunit\tool_ldapsync
+ * @package    tool_ldapsync
  * @copyright  Copyright (c) 2019, UCSF Center for Knowledge Management
  * @author     2019 Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
