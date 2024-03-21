@@ -54,7 +54,7 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
     private $sync = null;
     private $ldapconn = null;
 
-    protected function setUp() {
+    protected function setUp(): void {
         global $CFG;
 
         $this->resetAfterTest();
@@ -152,7 +152,7 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         ob_start();
     }
 
-    protected function tearDown() {
+    protected function tearDown(): void {
         if (!$this->ldapConn) {
             $this->recursive_delete($this->ldapConn, TEST_TOOL_LDAPSYNC_DOMAIN, 'dc=moodletest');
             ldap_close($this->ldapConn);

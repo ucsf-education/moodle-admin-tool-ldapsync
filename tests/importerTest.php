@@ -48,14 +48,14 @@ class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
 class tool_ldapsync_importer_testcase extends advanced_testcase {
     private $sync = null;
 
-    protected function setUp() {
+    protected function setUp(): void {
         $gmtts = strtotime('2000-01-01 00:00:00');
         $this->sync = new Testable_tool_ldapsync_importer($gmtts);
 
         ob_start();
     }
 
-    protected function tearDown() {
+    protected function tearDown(): void {
         ob_end_clean();
     }
 

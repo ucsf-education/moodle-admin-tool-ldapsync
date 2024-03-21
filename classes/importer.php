@@ -83,7 +83,7 @@ class importer {
     protected $_ldapdt = '';
 
     /**
-     * @var array $_ldapMoodleUserAttrMap maps user table column names to LDAP user record attribute names
+     * @var array $_ldapmoodleuserattrmap maps user table column names to LDAP user record attribute names
      */
     protected $_ldapmoodleuserattrmap = [
         'uid' => 'uid',
@@ -751,8 +751,8 @@ EOL;
         echo "done.\n";
         // 1. insert all LDAP records into temp table
         // --------------------------------------------
-        $attrnames = array_keys($this->_ldapMoodleUserAttrMap);
-        $colnames = array_values($this->_ldapMoodleUserAttrMap);
+        $attrnames = array_keys($this->_ldapmoodleuserattrmap);
+        $colnames = array_values($this->_ldapmoodleuserattrmap);
 
         echo "Populating staging table ... ";
         $total = count($data);

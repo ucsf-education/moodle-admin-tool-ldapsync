@@ -19,7 +19,7 @@
  *
  * @license    http://www.gnu.org/copyleft/gpl.html GNU Public License
  * @copyright  2007 Petr Skoda
- * @package    core
+ * @package    tool_ldapsync
  */
 
 define('NO_OUTPUT_BUFFERING', true);

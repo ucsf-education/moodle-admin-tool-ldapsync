@@ -17,6 +17,7 @@
 /**
  * Function to upgrade tool_ldapsync.
  *
+ * @package tool_ldapsync
  * @param int $oldversion the version we are upgrading from
  * @return bool result
  */
