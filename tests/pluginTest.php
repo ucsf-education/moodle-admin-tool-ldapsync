@@ -137,10 +137,20 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         set_config('field_updateremote_firstname', '0', 'tool_ldapsync');
         set_config('field_lock_firstname', 'unlocked', 'tool_ldapsync');
 
-        set_config('field_map_lastname', 'sn', 'auth_tool_ldapsync');
+        set_config('field_map_lastname', 'ucsfEduPreferredLastName,sn', 'auth_tool_ldapsync');
         set_config('field_updatelocal_lastname', 'oncreate', 'tool_ldapsync');
         set_config('field_updateremote_lastname', '0', 'tool_ldapsync');
         set_config('field_lock_lastname', 'unlocked', 'tool_ldapsync');
+
+        set_config('field_map_middlename', 'ucsfEduPreferredMiddleName,initials', 'auth_tool_ldapsync');
+        set_config('field_updatelocal_middlename', 'oncreate', 'tool_ldapsync');
+        set_config('field_updateremote_middlename', '0', 'tool_ldapsync');
+        set_config('field_lock_middlename', 'unlocked', 'tool_ldapsync');
+
+        set_config('field_map_alternatename', 'displayName', 'auth_tool_ldapsync');
+        set_config('field_updatelocal_alternatename', 'oncreate', 'tool_ldapsync');
+        set_config('field_updateremote_alternatename', '0', 'tool_ldapsync');
+        set_config('field_lock_alternatename', 'unlocked', 'tool_ldapsync');
 
         set_config('field_map_idnumber', 'ucsfEduIDNumber', 'auth_tool_ldapsync');
         set_config('field_updatelocal_idnumber', 'oncreate', 'tool_ldapsync');
@@ -206,10 +216,14 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
             $this->assertArrayHasKey('givenname', $ldapentry);
             $this->assertArrayHasKey('sn', $ldapentry);
             $this->assertArrayHasKey('mail', $ldapentry);
+            $this->assertArrayHasKey('initials', $ldapentry);
             // UCSF specifics
             $this->assertArrayHasKey('ucsfeduidnumber', $ldapentry);
             $this->assertArrayHasKey('edupersonprincipalname', $ldapentry);
             $this->assertArrayHasKey('ucsfedupreferredgivenname', $ldapentry);
+            $this->assertArrayHasKey('ucsfedupreferredlastname', $ldapentry);
+            $this->assertArrayHasKey('ucsfedupreferredmiddlename', $ldapentry);
+            $this->assertArrayHasKey('displayname', $ldapentry);
         }
 
         ldap_close($ldap);
@@ -417,10 +431,14 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         $o['homeDirectory'] = '/';
         $o['mail']          = 'user' . $i . '@example.com';
         $o['userPassword']  = 'pass' . $i;
+        $o['initials']      = 'Initials' . $i;
         // UCSF Specifics
         $o['ucsfEduIDNumber'] = '0200000' . $i . '2';
         $o['eduPersonPrincipalName'] = '00000' . $i . '@ucsf.edu';
-        $o['ucsfEduPreferredGivenName'] = 'Preferredname' . $i;
+        $o['ucsfEduPreferredGivenName'] = 'PreferredGivenName' . $i;
+        $o['ucsfEduPreferredLastName'] = 'PreferredLastName' . $i;
+        $o['ucsfEduPreferredMiddleName'] = 'PreferredMiddleName' . $i;
+        $o['displayName'] = 'DisplayName' . $i;
         $o['eduPersonAffiliation'] = 'member'; // e.g. member, staff, faculty
 
         ldap_add($connection, 'cn=' . $o['cn'] . ',ou=users,' . $topdn, $o);
