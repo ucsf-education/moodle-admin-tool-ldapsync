@@ -158,8 +158,9 @@ class importer {
      * @return string
      * @todo refactor this out into a utility class
      */
-    public static function formatldaptimestamp($ts) {
-        return strftime(self::LDAP_DATETIME_FORMAT, $ts);
+    public static function formatldaptimestamp($ts): string {
+        $datetime = \DateTime::createFromFormat('U', $ts);
+        return $datetime->format('YmdHis\Z');
     }
 
     /**
