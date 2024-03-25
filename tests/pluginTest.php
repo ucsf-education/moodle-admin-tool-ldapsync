@@ -179,7 +179,7 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
     public function testconnecttoldap() {
         try {
             $ldap = $this->sync->connectToLdap();
-            $this->assertEquals('ldap link', get_resource_type($ldap));
+            $this->assertInstanceOf('LDAP\Connection', $ldap);
             ldap_close($ldap);
         } catch (Exception $e) {
             $this->markTestIncomplete($e->getMessage());

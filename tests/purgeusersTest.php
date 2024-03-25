@@ -164,7 +164,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         } catch (Exception $e) {
             $this->markTestIncomplete($e->getMessage());
         }
-        $this->assertEquals('ldap link', get_resource_type($ldap));
+        $this->assertInstanceOf('LDAP\Connection', $ldap);
 
         // Create a few users
         $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;

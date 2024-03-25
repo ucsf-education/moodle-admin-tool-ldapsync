@@ -537,7 +537,7 @@ class importer {
             return $ldapconnection;
         }
 
-        print_error('auth_ldap_noconnect_all', 'auth_ldap', '', $debuginfo);
+        throw new \moodle_exception('auth_ldap_noconnect_all', 'auth_ldap', '', $debuginfo);
     }
 
     /**
