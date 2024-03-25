@@ -643,22 +643,18 @@ class importer {
                                     $email = trim(explode($delimiter, $email)[0]);
                                 }
                                 $result[$attr] = $email;
-                            } else if (
-                                (core_text::strtolower('sn') == $attr)
-                                       || (core_text::strtolower('givenname') == $attr)
+                            } else if ( (core_text::strtolower('sn') == $attr
+                                        || (core_text::strtolower('ucsfEduPreferredLastName') == $attr)
+                                        || (core_text::strtolower('givenname') == $attr)
+                                        || (core_text::strtolower('ucsfEduPreferredGivenName') == $attr)
+                                        || (core_text::strtolower('initials') == $attr)
+                                        || (core_text::strtolower('ucsfEduPreferredMiddleName') == $attr)
+                                        || (core_text::strtolower('displayName') == $attr)
                             ) {
-                                // Fixing: this field could have 'question mark' in it.
+                                // Fixing: these fields could have 'question mark' in it.
                                 // If so, just remove it.  ($DB->execute() does not like '?')
                                 if (strstr($ldapattrsls[$attr][0], '?')) {
                                     $result[$attr] = str_replace('?', '', $ldapattrsls[$attr][0]);
-                                } else {
-                                    $result[$attr] = $ldapattrsls[$attr][0];
-                                }
-                            } else if (core_text::strtolower('ucsfEduPreferredGivenName') == $attr) {
-                                // Fixing: this field could have 'question mark' in it.
-                                // If so, do not use.  ($DB->execute() does not like '?')
-                                if (strstr($ldapattrsls[$attr][0], '?')) {
-                                    $result[$attr] = '';
                                 } else {
                                     $result[$attr] = $ldapattrsls[$attr][0];
                                 }
