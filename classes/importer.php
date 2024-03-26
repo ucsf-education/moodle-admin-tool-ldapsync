@@ -90,7 +90,11 @@ class importer {
         'edupersonprincipalname' => 'username',
         'givenname' => 'firstname',
         'ucsfedupreferredgivenname' => 'preferred_firstname',
+        'initials' => 'middlename',
+        'ucsfedupreferredmiddlename' => 'preferred_middlename',
         'sn' => 'lastname',
+        'ucsfedupreferredlastname' => 'preferred_lastname',
+        'displayname' => 'alternatename',
         'mail' => 'email',
         'ucsfeduidnumber' => 'idnumber',
         'createtimestamp' => 'timecreated',
@@ -643,7 +647,7 @@ class importer {
                                     $email = trim(explode($delimiter, $email)[0]);
                                 }
                                 $result[$attr] = $email;
-                            } else if ( (core_text::strtolower('sn') == $attr
+                            } else if ( core_text::strtolower('sn') == $attr
                                         || (core_text::strtolower('ucsfEduPreferredLastName') == $attr)
                                         || (core_text::strtolower('givenname') == $attr)
                                         || (core_text::strtolower('ucsfEduPreferredGivenName') == $attr)
@@ -722,8 +726,12 @@ CREATE TEMPORARY TABLE {$stagingtblname}
   username VARCHAR(100),
   mnethostid BIGINT(10) UNSIGNED,
   firstname VARCHAR(100),
+  middlename VARCHAR(100),
   lastname VARCHAR(100),
   preferred_firstname VARCHAR(100),
+  preferred_middlename VARCHAR(100),
+  preferred_lastname VARCHAR(100),
+  alternatename VARCHAR(100),
   email VARCHAR(100),
   idnumber VARCHAR(255),
   timecreated BIGINT(10) UNSIGNED,
@@ -799,7 +807,10 @@ EOL;
 
         $selectsql = "SELECT {$usertblname}.id, {$stagingtblname}.uid";
         foreach ($colnames as $colname) {
-            if (!in_array($colname, ['uid', 'firstname', 'preferred_firstname'])) {
+            if (!in_array($colname, ['uid',
+                                        'firstname', 'preferred_firstname',
+                                        'middlename', 'preferred_middlename',
+                                        'lastname', 'preferred_lastname'])) {
                 $selectsql .= ", {$stagingtblname}.{$colname} AS new_{$colname}";
                 $selectsql .= ", {$usertblname}.{$colname}";
             }
@@ -811,6 +822,22 @@ EOL;
 WHEN '' = TRIM(COALESCE({$stagingtblname}.preferred_firstname, '')) THEN {$stagingtblname}.firstname
 ELSE {$stagingtblname}.preferred_firstname
 END AS new_firstname
+EOQ;
+        // special case "middle name": use the preferred middle name by default, fall back to middle name
+        $selectsql .= <<< EOQ
+, {$usertblname}.middlename
+, CASE
+WHEN '' = TRIM(COALESCE({$stagingtblname}.preferred_middlename, '')) THEN {$stagingtblname}.middlename
+ELSE {$stagingtblname}.preferred_middlename
+END AS new_middlename
+EOQ;
+        // special case "last name": use the preferred last name by default, fall back to last name
+        $selectsql .= <<< EOQ
+, {$usertblname}.lastname
+, CASE
+WHEN '' = TRIM(COALESCE({$stagingtblname}.preferred_lastname, '')) THEN {$stagingtblname}.lastname
+ELSE {$stagingtblname}.preferred_lastname
+END AS new_lastname
 EOQ;
         $selectsql .= ' ' . $sql;
         $result = $DB->get_record_sql($countsql);
@@ -835,6 +862,8 @@ EOQ;
                         if (
                             ($colname != 'uid') // does not exist in mdl_user table, ignore
                             && ($colname != 'preferred_firstname') // does not exist in mdl_user table, ignore
+                            && ($colname != 'preferred_middlename') // does not exist in mdl_user table, ignore
+                            && ($colname != 'preferred_lastname') // does not exist in mdl_user table, ignore
                             && ($user->{$colname} != $user->{$newcolname})
                         ) {
                             switch ($colname) {
@@ -906,7 +935,9 @@ EOQ;
 
         $selectsql = 'SELECT ';
         foreach ($colnames as $colname) {
-            if (!in_array($colname, ['firstname', 'preferred_firstname'])) {
+            if (!in_array($colname, ['firstname', 'preferred_firstname',
+                                     'middlename', 'preferred_middlename',
+                                     'lastname', 'preferred_lastname'])) {
                 $selectsql .= " {$stagingtblname}.{$colname}, ";
             }
         }
@@ -915,7 +946,21 @@ EOQ;
 CASE
 WHEN '' = TRIM(COALESCE({$stagingtblname}.preferred_firstname, '')) THEN {$stagingtblname}.firstname
 ELSE {$stagingtblname}.preferred_firstname
-END AS firstname
+END AS firstname,
+EOQ;
+        // special case "middle name": use the preferred middle name by default, fall back to middle name
+        $selectsql .= <<< EOQ
+CASE
+WHEN '' = TRIM(COALESCE({$stagingtblname}.preferred_middlename, '')) THEN {$stagingtblname}.middlename
+ELSE {$stagingtblname}.preferred_middlename
+END AS middlename,
+EOQ;
+        // special case "last name": use the preferred last name by default, fall back to last name
+        $selectsql .= <<< EOQ
+CASE
+WHEN '' = TRIM(COALESCE({$stagingtblname}.preferred_lastname, '')) THEN {$stagingtblname}.lastname
+ELSE {$stagingtblname}.preferred_lastname
+END AS lastname
 EOQ;
         $selectsql .= ' ' . $sql;
         $countsql = "SELECT COUNT(*) AS c " . $sql;

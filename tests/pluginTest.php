@@ -271,8 +271,10 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
             $this->assertTrue(
                 $DB->record_exists('user', ['username' => '00000' . $i . '@ucsf.edu',
                                             'email' => 'user' . $i . '@example.com',
-                                            'firstname' => 'Preferredname' . $i,
-                'lastname' => 'Lastname' . $i])
+                                            'firstname' => 'PreferredGivenName' . $i,
+                                            'lastname' => 'PreferredLastName' . $i,
+                                            'middlename' => 'PreferredMiddleName' . $i,
+                                            'alternatename' => 'DisplayName' . $i])
             );
         }
 
@@ -432,13 +434,13 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         $o['mail']          = 'user' . $i . '@example.com';
         $o['userPassword']  = 'pass' . $i;
         $o['initials']      = 'Initials' . $i;
+        $o['displayName']   = 'DisplayName' . $i;
         // UCSF Specifics
         $o['ucsfEduIDNumber'] = '0200000' . $i . '2';
         $o['eduPersonPrincipalName'] = '00000' . $i . '@ucsf.edu';
         $o['ucsfEduPreferredGivenName'] = 'PreferredGivenName' . $i;
         $o['ucsfEduPreferredLastName'] = 'PreferredLastName' . $i;
         $o['ucsfEduPreferredMiddleName'] = 'PreferredMiddleName' . $i;
-        $o['displayName'] = 'DisplayName' . $i;
         $o['eduPersonAffiliation'] = 'member'; // e.g. member, staff, faculty
 
         ldap_add($connection, 'cn=' . $o['cn'] . ',ou=users,' . $topdn, $o);
