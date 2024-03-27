@@ -39,7 +39,7 @@ defined('MOODLE_INTERNAL') || die();
  */
 class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
     public function updatemoodleaccounts(array $data) {
-        return $this->_updateMoodleAccounts($data);
+        return parent::updatemoodleaccounts($data);
     }
 }
 /**

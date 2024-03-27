@@ -38,8 +38,8 @@ defined('MOODLE_INTERNAL') || die();
  * Testable object for the importer
  */
 class Testable_tool_ldapsync_importer_for_purgeusers extends \tool_ldapsync\importer {
-    public function getupdatesfromldap($ldap, $ldaptimestamp) {
-        return $this->_getUpdatesFromLdap($ldap, $ldaptimestamp);
+    public function getupdatesfromldap($ldap, $ldaptimestamp = null) {
+        return parent::getupdatesfromldap($ldap, $ldaptimestamp);
     }
 }
 /**

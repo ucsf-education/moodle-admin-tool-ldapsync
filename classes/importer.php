@@ -59,33 +59,38 @@ class importer {
      */
     const DB_BATCH_LIMIT = 1000;
 
-     // The fields we can lock and update from/to external authentication backends
-     // @var array
+    /**
+     * The fields we can lock and update from/to external authentication backends
+     * @var array
+     */
     private $userfields = \core_user::AUTHSYNCFIELDS;
 
-    // Moodle custom fields to sync with.
-    // @var array()
+    /**
+     * Moodle custom fields to sync with.
+     * @var array()
+     */
     private $customfields = null;
 
-
-    // The configuration details for the plugin.
-    // @var object
+    /**
+     * The configuration details for the plugin.
+     * @var object
+     */
     protected $config;
+
+    /**
+     * @var string $ldapDt LDAP formatted datetime
+     */
+    protected $ldapdt = '';
 
     /**
      * @var integer $_ts UNIX timestamp
      */
-    protected $_ts = 0;
+    protected $ts = 0;
 
     /**
-     * @var string $_ldapDt LDAP formatted datetime
+     * @var array $ldapmoodleuserattrmap maps user table column names to LDAP user record attribute names
      */
-    protected $_ldapdt = '';
-
-    /**
-     * @var array $_ldapmoodleuserattrmap maps user table column names to LDAP user record attribute names
-     */
-    protected $_ldapmoodleuserattrmap = [
+    protected $ldapmoodleuserattrmap = [
         'uid' => 'uid',
         'edupersonprincipalname' => 'username',
         'givenname' => 'firstname',
@@ -99,7 +104,6 @@ class importer {
         'ucsfeduidnumber' => 'idnumber',
         'createtimestamp' => 'timecreated',
         'modifytimestamp' => 'timemodified',
-        // 'ucsfEduPreferredPronoun' => 'pronoun'
     ];
 
 
@@ -107,22 +111,21 @@ class importer {
      * @param integer $ts
      */
     public function __construct($ts = null) {
-        // Making sure php-ldap extension is present
+        // Making sure php-ldap extension is present.
         if (!extension_loaded('ldap')) {
             throw new Exception("php-ldap extension is not loaded in memory. \n");
         }
 
-        // Use $this->config
         $this->config = get_config('tool_ldapsync');
 
         if (!empty($ts)) {
-            $this->_ts = $ts;
+            $this->ts = $ts;
         } else if (!empty($this->config->last_synched_on)) {
-            $this->_ts = strtotime($this->config->last_synched_on);
+            $this->ts = strtotime($this->config->last_synched_on);
         }
 
-        if (!empty($this->_ts)) {
-            $this->_ldapDt = self::formatLdapTimestamp($this->_ts);
+        if (!empty($this->ts)) {
+            $this->_ldapDt = self::formatLdapTimestamp($this->ts);
         }
 
         if (empty($this->config->ldapencoding)) {
@@ -132,7 +135,7 @@ class importer {
             $this->config->user_type = 'default';
         }
 
-        // Merge data mapping info from 'auth_tool_ldapsync'
+        // Merge data mapping info from 'auth_tool_ldapsync'.
         $mapconfig = get_config('auth_tool_ldapsync');
         foreach ($mapconfig as $key => $value) {
             $this->config->{$key} = $value;
@@ -144,15 +147,15 @@ class importer {
 
         $default = ldap_getdefaults();
 
-        // Use defaults if values not given
+        // Use defaults if values not given.
         foreach ($default as $key => $value) {
-            // watch out - 0, false are correct values too
+            // Watch out - 0, false are correct values too.
             if (!isset($this->config->{$key}) || $this->config->{$key} == '') {
                 $this->config->{$key} = $value[$this->config->user_type];
             }
         }
 
-        // Hack prefix to objectclass
+        // Hack prefix to objectclass.
         $this->config->objectclass = ldap_normalise_objectclass($this->config->objectclass);
     }
 
@@ -160,7 +163,7 @@ class importer {
      * Utility function, converts a given UNIX timestamp into a LDAP formatted datetime string.
      * @param integer $ts
      * @return string
-     * @todo refactor this out into a utility class
+     * TODO: refactor this out into a utility class
      */
     public static function formatldaptimestamp($ts): string {
         $datetime = \DateTime::createFromFormat('U', $ts);
@@ -172,12 +175,12 @@ class importer {
      */
     public function run() {
         // 1. get the new/updated entries from LDAP
-        $ldap = $this->_connectToLdap();
+        $ldap = $this->connecttoldap();
         $start = time();
-        $data = $this->_getUpdatesFromLdap($ldap, $this->_ldapDt);
-        $this->ldap_close($ldap); // cleanup
+        $data = $this->getupdatesfromldap($ldap, $this->ldapdt);
+        $this->ldap_close();
         // 2. add/merge entries into Moodle
-        $this->_updateMoodleAccounts($data);
+        $this->updatemoodleaccounts($data);
         set_config('last_synched_on', date('c', $start), 'tool_ldapsync');
     }
 
@@ -189,7 +192,7 @@ class importer {
     public function user_exists($username) {
         $extusername = core_text::convert($username, 'utf-8', $this->config->ldapencoding);
 
-        // Returns true if given username exists on ldap
+        // Returns true if given username exists on ldap.
         $users = $this->ldap_get_userlist('(' . $this->config->user_attribute . '=' . ldap_filter_addslashes($extusername) . ')');
         return count($users);
     }
@@ -207,7 +210,7 @@ class importer {
                 return "({$ldapcampusidproperty}={$campusid})";
             }, $userids);
             $users = [];
-            // Split into groups of 50 to avoid LDAP query length limits
+            // Split into groups of 50 to avoid LDAP query length limits.
             foreach (array_chunk($filterterms, 50) as $terms) {
                 $filtertermsstring = implode('', $terms);
                 $filter = "(|{$filtertermsstring})";
@@ -393,7 +396,7 @@ class importer {
      * @param $filter An LDAP search filter to select desired users
      * @return array of LDAP user names converted to UTF-8
      */
-    private function _ldap_get_userlist($filter = '*') {
+/*     private function _ldap_get_userlist($filter = '*') {
         $userlist = explode(')(edupersonprincipalname=', ltrim(rtrim($filter, ')'), '(|(edupersonprincipalname='));
         for ($i = 0; $i < 5; $i++) {
             // unset($userlist[rand(0, count($userlist))]);
@@ -401,7 +404,7 @@ class importer {
         }
         return $userlist;
     }
-
+ */
     private function ldap_get_userlist($filter = '*') {
         global $CFG;
 
@@ -498,7 +501,7 @@ class importer {
      * @return resource the connected and bound LDAP handle
      * @throws Exception if connectivity to LDAP server couldn't be fully established.
      */
-    protected function _connecttoldap() {
+    protected function connecttoldap() {
         echo "Connecting to LDAP server ... ";
         if (!$ldapconnection = $this->ldap_connect()) {
             throw new Exception("Couldn't bind to LDAP server.");
@@ -511,7 +514,7 @@ class importer {
      * Connect to the LDAP server, using the plugin configured
      * settings. It's actually a wrapper around ldap_connect_moodle()
      *
-     * @return resource A valid LDAP connection (or dies if it can't connect)
+     * @return mixed connection result or false.
      */
     public function ldap_connect() {
         // Cache ldap connections. They are expensive to set up
@@ -524,6 +527,7 @@ class importer {
             return $this->ldapconnection;
         }
 
+        $debuginfo = '';
         if (
             $ldapconnection = ldap_connect_moodle(
                 $this->config->host_url,
@@ -562,13 +566,13 @@ class importer {
 
     /**
      * Searches LDAP for user records that were updated/created after a given datetime.
-     * @param resource $ldap the LDAP server handle
+     * @param \LDAP\Connection $ldap the LDAP connection
      * @param string $baseDn the base DN
      * @param string $ldapTimestamp the datetime
      * @return array nested array of user records
      * @throws Exception if search fails
      */
-    protected function _getupdatesfromldap($ldap, $ldaptimestamp = null) {
+    protected function getupdatesfromldap($ldap, $ldaptimestamp = null) {
         if (empty($ldaptimestamp)) {
             echo "Start prowling LDAP for all records... ";
             $filter = '(&(' . $this->config->user_attribute . '=*)' . $this->config->objectclass . ')';
@@ -647,7 +651,8 @@ class importer {
                                     $email = trim(explode($delimiter, $email)[0]);
                                 }
                                 $result[$attr] = $email;
-                            } else if ( core_text::strtolower('sn') == $attr
+                            } else if (
+                                        core_text::strtolower('sn') == $attr
                                         || (core_text::strtolower('ucsfEduPreferredLastName') == $attr)
                                         || (core_text::strtolower('givenname') == $attr)
                                         || (core_text::strtolower('ucsfEduPreferredGivenName') == $attr)
@@ -700,7 +705,7 @@ class importer {
      * @see auth_plugin_ldap::sync_users()
      * @throws Exception on database/SQL related failures
      */
-    protected function _updatemoodleaccounts(array $data) {
+    protected function updatemoodleaccounts(array $data) {
         global $CFG, $DB;
         if (!count($data)) {
             return;
@@ -756,8 +761,8 @@ EOL;
         echo "done.\n";
         // 1. insert all LDAP records into temp table
         // --------------------------------------------
-        $attrnames = array_keys($this->_ldapmoodleuserattrmap);
-        $colnames = array_values($this->_ldapmoodleuserattrmap);
+        $attrnames = array_keys($this->ldapmoodleuserattrmap);
+        $colnames = array_values($this->ldapmoodleuserattrmap);
 
         echo "Populating staging table ... ";
         $total = count($data);
@@ -807,10 +812,12 @@ EOL;
 
         $selectsql = "SELECT {$usertblname}.id, {$stagingtblname}.uid";
         foreach ($colnames as $colname) {
-            if (!in_array($colname, ['uid',
+            if (
+                !in_array($colname, ['uid',
                                         'firstname', 'preferred_firstname',
                                         'middlename', 'preferred_middlename',
-                                        'lastname', 'preferred_lastname'])) {
+                                        'lastname', 'preferred_lastname'])
+            ) {
                 $selectsql .= ", {$stagingtblname}.{$colname} AS new_{$colname}";
                 $selectsql .= ", {$usertblname}.{$colname}";
             }
@@ -935,9 +942,11 @@ EOQ;
 
         $selectsql = 'SELECT ';
         foreach ($colnames as $colname) {
-            if (!in_array($colname, ['firstname', 'preferred_firstname',
+            if (
+                !in_array($colname, ['firstname', 'preferred_firstname',
                                      'middlename', 'preferred_middlename',
-                                     'lastname', 'preferred_lastname'])) {
+                                     'lastname', 'preferred_lastname'])
+            ) {
                 $selectsql .= " {$stagingtblname}.{$colname}, ";
             }
         }
