@@ -21,7 +21,7 @@
     require_once($CFG->dirroot . '/user/lib.php');
 
 //
-// Copied from user_bulk_action_form() in admin/user/user_bulk/user_bulk_forms.php
+// Copied from user_bulk_action_form() in admin/user/user_bulk/user_bulk_forms.php.
 
 /**
  * Create a form that is similar to user bulk form to filter users for purging
@@ -118,18 +118,25 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
         switch ($data->action) {
             case 1:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/user/user_bulk_confirm.php');
+                break;
             case 2:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/user/user_bulk_message.php');
+                break;
             case 3:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/tool/ldapsync/user_bulk_delete.php');
+                break;
             case 4:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/tool/ldapsync/user_bulk_display.php');
+                break;
             case 5:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/tool/ldapsync/user_bulk_download.php');
+                break;
             case 7:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/user/user_bulk_forcepasswordchange.php');
+                break;
             case 8:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/user/user_bulk_cohortadd.php');
+                break;
         }
     }
 

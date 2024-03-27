@@ -112,7 +112,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
             $this->assertEquals($user['mail'], $record->email);
         }
 
-        // Test update existing record with dashes
+        // Test update existing record with dashes.
         $data = [ [
                              "uid" => "1",
                              "givenname" => "Jane",
@@ -123,7 +123,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
                              "ucsfedupreferredgivenname" => "",
                              ] ];
         $expectedfinalcount = $DB->count_records('user');
-        $this->sync->updateMoodleAccounts($data);
+        $this->sync->updatemoodleaccounts($data);
         $finalcount = $DB->count_records('user');
         $this->assertEquals($expectedfinalcount, $finalcount);
 
@@ -149,7 +149,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
 
         $expectedfinalcount = $DB->count_records('user') + count($data);
 
-        $this->sync->updateMoodleAccounts($data);
+        $this->sync->updatemoodleaccounts($data);
 
         $finalcount = $DB->count_records('user');
 
@@ -212,7 +212,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
 
         $expectedfinalcount = $DB->count_records('user') + 1;
 
-        $this->sync->updateMoodleAccounts($data);
+        $this->sync->updatemoodleaccounts($data);
 
         $finalcount = $DB->count_records('user');
 
@@ -266,7 +266,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
 
         $expectedfinalcount = $DB->count_records('user');
 
-        $this->sync->updateMoodleAccounts($data);
+        $this->sync->updatemoodleaccounts($data);
 
         $finalcount = $DB->count_records('user');
 
