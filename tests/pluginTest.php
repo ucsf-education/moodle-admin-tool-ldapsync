@@ -188,7 +188,7 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
     /**
      * @group ldaptests
-     * @depends testConnectToLdap
+     * @depends testconnecttoldap
      */
     public function testgetupdatesfromldap() {
         $ldap = $this->sync->connectToLdap();
