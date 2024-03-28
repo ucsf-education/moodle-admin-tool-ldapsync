@@ -39,11 +39,19 @@ defined('MOODLE_INTERNAL') || die();
  */
 class Testable_tool_ldapsync_importer_for_plugin extends \tool_ldapsync\importer {
     public function connecttoldap() {
-        return $this->_connectToLdap();
+        return parent::connecttoldap();
     }
 
-    public function getupdatesfromldap($ldap, $ldaptimestamp) {
-        return $this->_getUpdatesFromLdap($ldap, $ldaptimestamp);
+    /**
+     * Searches LDAP for user records that were updated/created after a given datetime.
+     * @param \LDAP\Connection $ldap the LDAP connection
+     * @param string $baseDn the base DN
+     * @param string $ldapTimestamp the datetime
+     * @return array nested array of user records
+     * @throws Exception if search fails
+     */
+    public function getupdatesfromldap($ldap, $ldaptimestamp = null) {
+        return parent::getupdatesfromldap($ldap, $ldaptimestamp);
     }
 }
 
@@ -178,8 +186,8 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
      */
     public function testconnecttoldap() {
         try {
-            $ldap = $this->sync->connectToLdap();
-            $this->assertEquals('ldap link', get_resource_type($ldap));
+            $ldap = $this->sync->connecttoldap();
+            $this->assertInstanceOf('LDAP\Connection', $ldap);
             ldap_close($ldap);
         } catch (Exception $e) {
             $this->markTestIncomplete($e->getMessage());
@@ -188,10 +196,10 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
     /**
      * @group ldaptests
-     * @depends testConnectToLdap
+     * @depends testconnecttoldap
      */
     public function testgetupdatesfromldap() {
-        $ldap = $this->sync->connectToLdap();
+        $ldap = $this->sync->connecttoldap();
 
         // Create a few users
         $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
@@ -201,12 +209,12 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
         // Test with current time + 7 days, expect no update returned
         $ts = date('YmdHis\Z', time() + 7 * 24 * 3600);
-        $result = $this->sync->getUpdatesFromLdap($ldap, $ts);
+        $result = $this->sync->getupdatesfromldap($ldap, $ts);
         $this->assertEmpty($result);
 
         // Test with a fix old date, expect the first few updates are the same.
         $ts = '20100101000000Z';
-        $result = $this->sync->getUpdatesFromLdap($ldap, $ts);
+        $result = $this->sync->getupdatesfromldap($ldap, $ts);
 
         $this->assertGreaterThan(1, count($result));
         // var_dump( $result );
@@ -217,13 +225,13 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
             $this->assertArrayHasKey('sn', $ldapentry);
             $this->assertArrayHasKey('mail', $ldapentry);
             $this->assertArrayHasKey('initials', $ldapentry);
+            $this->assertArrayHasKey('displayname', $ldapentry);
             // UCSF specifics
             $this->assertArrayHasKey('ucsfeduidnumber', $ldapentry);
             $this->assertArrayHasKey('edupersonprincipalname', $ldapentry);
             $this->assertArrayHasKey('ucsfedupreferredgivenname', $ldapentry);
             $this->assertArrayHasKey('ucsfedupreferredlastname', $ldapentry);
             $this->assertArrayHasKey('ucsfedupreferredmiddlename', $ldapentry);
-            $this->assertArrayHasKey('displayname', $ldapentry);
         }
 
         ldap_close($ldap);
@@ -271,8 +279,10 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
             $this->assertTrue(
                 $DB->record_exists('user', ['username' => '00000' . $i . '@ucsf.edu',
                                             'email' => 'user' . $i . '@example.com',
-                                            'firstname' => 'Preferredname' . $i,
-                'lastname' => 'Lastname' . $i])
+                                            'firstname' => 'PreferredGivenName' . $i,
+                                            'lastname' => 'PreferredLastName' . $i,
+                                            'middlename' => 'PreferredMiddleName' . $i,
+                                            'alternatename' => 'DisplayName' . $i])
             );
         }
 
@@ -432,13 +442,13 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         $o['mail']          = 'user' . $i . '@example.com';
         $o['userPassword']  = 'pass' . $i;
         $o['initials']      = 'Initials' . $i;
+        $o['displayName']   = 'DisplayName' . $i;
         // UCSF Specifics
         $o['ucsfEduIDNumber'] = '0200000' . $i . '2';
         $o['eduPersonPrincipalName'] = '00000' . $i . '@ucsf.edu';
         $o['ucsfEduPreferredGivenName'] = 'PreferredGivenName' . $i;
         $o['ucsfEduPreferredLastName'] = 'PreferredLastName' . $i;
         $o['ucsfEduPreferredMiddleName'] = 'PreferredMiddleName' . $i;
-        $o['displayName'] = 'DisplayName' . $i;
         $o['eduPersonAffiliation'] = 'member'; // e.g. member, staff, faculty
 
         ldap_add($connection, 'cn=' . $o['cn'] . ',ou=users,' . $topdn, $o);

@@ -50,7 +50,7 @@ if ($hassiteconfig) {
                 new lang_string('ldapsync_description', 'tool_ldapsync')
             ));
 
-            // Target authtype setting, e.g. manual, shibboleth
+            // Target authtype setting, e.g. manual, shibboleth.
             $enabledauth = ['manual' => 'manual'];
             $moreauths = $DB->get_field('config', 'value', ['name' => 'auth']);
             if (!empty($moreauths)) {
@@ -266,7 +266,7 @@ if ($hassiteconfig) {
             ));
 
             // Sync Suspension.
-            // TODO: What is suspension status?  Is it an attribute in LDAP?
+            // What is suspension status?  Is it an attribute in LDAP?
             $settings->add(new admin_setting_configselect(
                 'tool_ldapsync/sync_suspended',
                 new lang_string('auth_sync_suspended_key', 'auth'),
@@ -283,7 +283,8 @@ if ($hassiteconfig) {
         $help .= get_string('auth_fieldlock_expl', 'auth');
         $help .= '<hr />';
         $help .= get_string('auth_updateremote_ldap', 'auth');
-        // Using 'display_auth_lock_options' will create config variables with 'auth_' prefixes, i.e. 'auth_tool_ldapsync' instead of 'tool_ldapsync'.
+        // Using 'display_auth_lock_options' will create config variables with 'auth_' prefixes,
+        // i.e. 'auth_tool_ldapsync' instead of 'tool_ldapsync'.
         display_auth_lock_options(
             $settings,
             'tool_ldapsync',

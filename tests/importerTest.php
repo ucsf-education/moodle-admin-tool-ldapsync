@@ -39,7 +39,8 @@ defined('MOODLE_INTERNAL') || die();
  */
 class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
     public function updatemoodleaccounts(array $data) {
-        return $this->_updateMoodleAccounts($data);
+        // Change visibility to allow tests to call protected function.
+        return parent::updatemoodleaccounts($data);
     }
 }
 /**
@@ -112,7 +113,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
             $this->assertEquals($user['mail'], $record->email);
         }
 
-        // Test update existing record with dashes
+        // Test update existing record with dashes.
         $data = [ [
                              "uid" => "1",
                              "givenname" => "Jane",
@@ -123,7 +124,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
                              "ucsfedupreferredgivenname" => "",
                              ] ];
         $expectedfinalcount = $DB->count_records('user');
-        $this->sync->updateMoodleAccounts($data);
+        $this->sync->updatemoodleaccounts($data);
         $finalcount = $DB->count_records('user');
         $this->assertEquals($expectedfinalcount, $finalcount);
 
@@ -149,7 +150,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
 
         $expectedfinalcount = $DB->count_records('user') + count($data);
 
-        $this->sync->updateMoodleAccounts($data);
+        $this->sync->updatemoodleaccounts($data);
 
         $finalcount = $DB->count_records('user');
 
@@ -212,7 +213,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
 
         $expectedfinalcount = $DB->count_records('user') + 1;
 
-        $this->sync->updateMoodleAccounts($data);
+        $this->sync->updatemoodleaccounts($data);
 
         $finalcount = $DB->count_records('user');
 
@@ -266,7 +267,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
 
         $expectedfinalcount = $DB->count_records('user');
 
-        $this->sync->updateMoodleAccounts($data);
+        $this->sync->updatemoodleaccounts($data);
 
         $finalcount = $DB->count_records('user');
 

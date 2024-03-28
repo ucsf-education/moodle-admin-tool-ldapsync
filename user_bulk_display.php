@@ -83,14 +83,14 @@ foreach ($columns as $column) {
         }
         $columnicon = ' ' . $OUTPUT->pix_icon($icon, get_string($iconstr));
     }
-    $table->head[] = '<a href="user_bulk_display.php?sort=' . $column . '&amp;dir=' . $columndir . '">' . $strtitle . '</a>' . $columnicon;
+    $table->head[] = '<a href="user_bulk_display.php?sort=' . $column . '&amp;dir=' . $columndir . '">'
+                     . $strtitle . '</a>' . $columnicon;
     $table->align[] = 'left';
 }
 
 foreach ($users as $user) {
     $table->data[] = [
         '<a href="' . $CFG->wwwroot . '/user/view.php?id=' . $user->id . '&amp;course=' . SITEID . '">' . $user->fullname . '</a>',
-        // $user->username,
         s($user->email),
         $user->city,
         $user->country,
