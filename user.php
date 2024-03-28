@@ -70,7 +70,7 @@ class ldapsync_purgeusers_action_form extends moodleform {
     $site = get_site();
 
 if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('moodle/user:delete', $sitecontext)) {
-    print_error('nopermissions', 'error', '', 'edit/delete users');
+    throw new \moodle_exception('nopermissions', 'error', '', 'edit/delete users');
 }
 
     $stredit   = get_string('edit');
@@ -132,7 +132,7 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
     if ($confirmuser && confirm_sesskey()) {
         require_capability('moodle/user:update', $sitecontext);
         if (!$user = $DB->get_record('user', ['id' => $confirmuser, 'mnethostid' => $CFG->mnet_localhost_id])) {
-            print_error('nousers');
+            throw new \moodle_exception('nousers');
         }
 
         $auth = get_auth_plugin($user->auth);
@@ -147,12 +147,12 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
         }
     } else if ($resendemail && confirm_sesskey()) {
         if (!$user = $DB->get_record('user', ['id' => $resendemail, 'mnethostid' => $CFG->mnet_localhost_id, 'deleted' => 0])) {
-            print_error('nousers');
+            throw new \moodle_exception('nousers');
         }
 
         // Prevent spamming users who are already confirmed.
         if ($user->confirmed) {
-            print_error('alreadyconfirmed');
+            throw new \moodle_exception('alreadyconfirmed');
         }
 
         $returnmsg = get_string('emailconfirmsentsuccess');
@@ -169,10 +169,10 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
         $user = $DB->get_record('user', ['id' => $delete, 'mnethostid' => $CFG->mnet_localhost_id], '*', MUST_EXIST);
 
         if ($user->deleted) {
-            print_error('usernotdeleteddeleted', 'error');
+            throw new \moodle_exception('usernotdeleteddeleted', 'error');
         }
         if (is_siteadmin($user->id)) {
-            print_error('useradminodelete', 'error');
+            throw new \moodle_exception('useradminodelete', 'error');
         }
 
         if ($confirm != md5($delete)) {
@@ -199,17 +199,17 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
         }
     } else if ($acl && confirm_sesskey()) {
         if (!has_capability('moodle/user:update', $sitecontext)) {
-            print_error('nopermissions', 'error', '', 'modify the NMET access control list');
+            throw new \moodle_exception('nopermissions', 'error', '', 'modify the NMET access control list');
         }
         if (!$user = $DB->get_record('user', ['id' => $acl])) {
-            print_error('nousers', 'error');
+            throw new \moodle_exception('nousers', 'error');
         }
         if (!is_mnet_remote_user($user)) {
-            print_error('usermustbemnet', 'error');
+            throw new \moodle_exception('usermustbemnet', 'error');
         }
         $accessctrl = strtolower(required_param('accessctrl', PARAM_ALPHA));
         if ($accessctrl != 'allow' && $accessctrl != 'deny') {
-            print_error('invalidaccessparameter', 'error');
+            throw new \moodle_exception('invalidaccessparameter', 'error');
         }
         $aclrecord = $DB->get_record(
             'mnet_sso_access_control',
