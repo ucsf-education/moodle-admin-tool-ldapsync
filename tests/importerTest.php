@@ -39,6 +39,7 @@ defined('MOODLE_INTERNAL') || die();
  */
 class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
     public function updatemoodleaccounts(array $data) {
+        // Change visibility to allow tests to call protected function.
         return parent::updatemoodleaccounts($data);
     }
 }
