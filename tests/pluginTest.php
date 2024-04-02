@@ -134,36 +134,37 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         set_config('opt_deref', LDAP_DEREF_NEVER, 'tool_ldapsync');
         set_config('user_attribute', 'eduPersonPrincipalName', 'tool_ldapsync');
         set_config('objectclass', 'ucsfEduPerson', 'tool_ldapsync');
+        set_config('authtype', 'cas', 'tool_ldapsync');
 
         set_config('field_map_email', 'mail', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_email', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_email', '0', 'tool_ldapsync');
-        set_config('field_lock_email', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_email', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_email', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_email', 'unlocked', 'auth_tool_ldapsync');
 
         set_config('field_map_firstname', 'ucsfEduPreferredGivenName,givenName', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_firstname', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_firstname', '0', 'tool_ldapsync');
-        set_config('field_lock_firstname', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_firstname', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_firstname', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_firstname', 'unlocked', 'auth_tool_ldapsync');
 
         set_config('field_map_lastname', 'ucsfEduPreferredLastName,sn', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_lastname', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_lastname', '0', 'tool_ldapsync');
-        set_config('field_lock_lastname', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_lastname', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_lastname', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_lastname', 'unlocked', 'auth_tool_ldapsync');
 
         set_config('field_map_middlename', 'ucsfEduPreferredMiddleName,initials', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_middlename', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_middlename', '0', 'tool_ldapsync');
-        set_config('field_lock_middlename', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_middlename', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_middlename', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_middlename', 'unlocked', 'auth_tool_ldapsync');
 
         set_config('field_map_alternatename', 'displayName', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_alternatename', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_alternatename', '0', 'tool_ldapsync');
-        set_config('field_lock_alternatename', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_alternatename', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_alternatename', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_alternatename', 'unlocked', 'auth_tool_ldapsync');
 
         set_config('field_map_idnumber', 'ucsfEduIDNumber', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_idnumber', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_idnumber', '0', 'tool_ldapsync');
-        set_config('field_lock_idnumber', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_idnumber', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_idnumber', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_idnumber', 'unlocked', 'auth_tool_ldapsync');
 
         $this->sync = new Testable_tool_ldapsync_importer_for_plugin($gmtts);
 
@@ -184,7 +185,7 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
     /**
      * @group ldaptests
      */
-    public function testconnecttoldap() {
+    public function test_connecttoldap() {
         try {
             $ldap = $this->sync->connecttoldap();
             $this->assertInstanceOf('LDAP\Connection', $ldap);
@@ -196,9 +197,9 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
     /**
      * @group ldaptests
-     * @depends testconnecttoldap
+     * @depends test_connecttoldap
      */
-    public function testgetupdatesfromldap() {
+    public function test_get_updates_from_ldap() {
         $ldap = $this->sync->connecttoldap();
 
         // Create a few users
@@ -217,10 +218,9 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         $result = $this->sync->getupdatesfromldap($ldap, $ts);
 
         $this->assertGreaterThan(1, count($result));
-        // var_dump( $result );
 
         foreach ($result as $ldapentry) {
-            // $this->assertArrayHasKey( 'uid', $ldapEntry );
+            $this->assertArrayHasKey( 'uid', $ldapentry );
             $this->assertArrayHasKey('givenname', $ldapentry);
             $this->assertArrayHasKey('sn', $ldapentry);
             $this->assertArrayHasKey('mail', $ldapentry);
@@ -237,6 +237,10 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         ldap_close($ldap);
     }
 
+    /**
+     * @group ldaptests
+     * @depends test_connecttoldap
+     */
     public function test_tool_ldapsync_importer() {
         global $CFG, $DB;
 
@@ -253,7 +257,6 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
         ob_start();
         $sink = $this->redirectEvents();
-        // $importer = new \tool_ldapsync\importer($ldapConf, $gmtTs);
         $this->sync->run();
         $events = $sink->get_events();
         $sink->close();
@@ -273,7 +276,7 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         // }
 
         // @TODO Should make 'auth' customizable
-        $this->assertEquals(5, $DB->count_records('user', ['auth' => 'shibboleth']));
+        $this->assertEquals(5, $DB->count_records('user', ['auth' => 'cas']));
 
         for ($i = 1; $i <= 5; $i++) {
             $this->assertTrue(
@@ -430,7 +433,6 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
     protected function create_ldap_user($connection, $topdn, $i) {
         $o = [];
-        // $o['objectClass']   = array('inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount');
         $o['objectClass']   = ['inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount', 'eduPerson', 'ucsfEduPerson'];
         $o['cn']            = 'username' . $i;
         $o['sn']            = 'Lastname' . $i;

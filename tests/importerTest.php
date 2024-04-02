@@ -60,7 +60,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
         ob_end_clean();
     }
 
-    public function testupdatemoodleaccountswithapostrophesanddashes() {
+    public function test_update_moodle_accounts_with_apostrophes_and_dashes() {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -136,7 +136,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
         }
     }
 
-    public function testaddingnewuserwithourdefaultvaluesset() {
+    public function test_adding_new_user_with_our_default_values_set() {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -166,7 +166,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
         }
     }
 
-    public function testuserwithemptyeppnshouldbeskipped() {
+    public function test_user_with_empty_eppn_should_be_skipped() {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -220,7 +220,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
         $this->assertEquals($expectedfinalcount, $finalcount);
     }
 
-    public function testskippingalluserswillnotgenerateerror() {
+    public function test_skipping_all_users_will_not_generate_error() {
         global $DB;
         $this->resetAfterTest(true);
 
