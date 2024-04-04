@@ -220,7 +220,7 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         $this->assertGreaterThan(1, count($result));
 
         foreach ($result as $ldapentry) {
-            $this->assertArrayHasKey( 'uid', $ldapentry );
+            $this->assertArrayHasKey('uid', $ldapentry);
             $this->assertArrayHasKey('givenname', $ldapentry);
             $this->assertArrayHasKey('sn', $ldapentry);
             $this->assertArrayHasKey('mail', $ldapentry);

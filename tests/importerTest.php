@@ -50,13 +50,61 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
     private $sync = null;
 
     protected function setUp(): void {
+        // Create new empty test container.
+        $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
+
         $gmtts = strtotime('2000-01-01 00:00:00');
+
+        // Configure the plugin a bit.
+        set_config('host_url', TEST_TOOL_LDAPSYNC_HOST_URL, 'tool_ldapsync');
+        set_config('start_tls', 0, 'tool_ldapsync');
+        set_config('ldap_version', 3, 'tool_ldapsync');
+        set_config('bind_dn', TEST_TOOL_LDAPSYNC_BIND_DN, 'tool_ldapsync');
+        set_config('bind_pw', TEST_TOOL_LDAPSYNC_BIND_PW, 'tool_ldapsync');
+        set_config('user_type', 'rfc2307', 'tool_ldapsync');
+        set_config('contexts', 'ou=users,' . $topdn, 'tool_ldapsync');
+        set_config('opt_deref', LDAP_DEREF_NEVER, 'tool_ldapsync');
+        set_config('user_attribute', 'eduPersonPrincipalName', 'tool_ldapsync');
+        set_config('objectclass', 'ucsfEduPerson', 'tool_ldapsync');
+        set_config('authtype', 'cas', 'tool_ldapsync');
+
+        set_config('field_map_email', 'mail', 'auth_tool_ldapsync');
+        set_config('field_updatelocal_email', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_email', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_email', 'unlocked', 'auth_tool_ldapsync');
+
+        set_config('field_map_firstname', 'ucsfEduPreferredGivenName,givenName', 'auth_tool_ldapsync');
+        set_config('field_updatelocal_firstname', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_firstname', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_firstname', 'unlocked', 'auth_tool_ldapsync');
+
+        set_config('field_map_lastname', 'ucsfEduPreferredLastName,sn', 'auth_tool_ldapsync');
+        set_config('field_updatelocal_lastname', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_lastname', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_lastname', 'unlocked', 'auth_tool_ldapsync');
+
+        set_config('field_map_middlename', 'ucsfEduPreferredMiddleName,initials', 'auth_tool_ldapsync');
+        set_config('field_updatelocal_middlename', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_middlename', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_middlename', 'unlocked', 'auth_tool_ldapsync');
+
+        set_config('field_map_alternatename', 'displayName', 'auth_tool_ldapsync');
+        set_config('field_updatelocal_alternatename', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_alternatename', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_alternatename', 'unlocked', 'auth_tool_ldapsync');
+
+        set_config('field_map_idnumber', 'ucsfEduIDNumber', 'auth_tool_ldapsync');
+        set_config('field_updatelocal_idnumber', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_idnumber', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_idnumber', 'unlocked', 'auth_tool_ldapsync');
+
         $this->sync = new Testable_tool_ldapsync_importer($gmtts);
 
         ob_start();
     }
 
     protected function tearDown(): void {
+        // ob_end_flush();
         ob_end_clean();
     }
 
@@ -95,7 +143,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
 
         $expectedfinalcount = $DB->count_records('user') + count($data);
 
-        $this->sync->updateMoodleAccounts($data);
+        $this->sync->updatemoodleaccounts($data);
         $finalcount = $DB->count_records('user');
 
         $this->assertEquals($expectedfinalcount, $finalcount);
