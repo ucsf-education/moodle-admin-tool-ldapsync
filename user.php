@@ -21,7 +21,7 @@
     require_once($CFG->dirroot . '/user/lib.php');
 
 //
-// Copied from user_bulk_action_form() in admin/user/user_bulk/user_bulk_forms.php
+// Copied from user_bulk_action_form() in admin/user/user_bulk/user_bulk_forms.php.
 
 /**
  * Create a form that is similar to user bulk form to filter users for purging
@@ -35,25 +35,12 @@ class ldapsync_purgeusers_action_form extends moodleform {
 
         $syscontext = context_system::instance();
         $actions = [0 => get_string('choose') . '...'];
-        // if (has_capability('moodle/user:update', $syscontext)) {
-        // $actions[1] = get_string('confirm');
-        // }
-        // if (has_capability('moodle/site:readallmessages', $syscontext) && !empty($CFG->messaging)) {
-        // $actions[2] = get_string('messageselectadd');
-        // }
         if (has_capability('moodle/user:delete', $syscontext)) {
             $actions[3] = get_string('delete');
         }
-        // $actions[4] = get_string('displayonpage');
         if (has_capability('moodle/user:update', $syscontext)) {
             $actions[5] = get_string('download', 'admin');
         }
-        // if (has_capability('moodle/user:update', $syscontext)) {
-        // $actions[7] = get_string('forcepasswordchange');
-        // }
-        // if (has_capability('moodle/cohort:assign', $syscontext)) {
-        // $actions[8] = get_string('bulkadd', 'core_cohort');
-        // }
         $objs = [];
         $objs[] =& $mform->createElement('select', 'action', null, $actions);
         $objs[] =& $mform->createElement('submit', 'doaction', get_string('go'));
@@ -63,15 +50,15 @@ class ldapsync_purgeusers_action_form extends moodleform {
 
 
     $delete       = optional_param('delete', 0, PARAM_INT);
-    $confirm      = optional_param('confirm', '', PARAM_ALPHANUM);   // md5 confirmation hash
+    $confirm      = optional_param('confirm', '', PARAM_ALPHANUM);   // This is an md5 confirmation hash.
     $confirmuser  = optional_param('confirmuser', 0, PARAM_INT);
     $sort         = optional_param('sort', 'name', PARAM_ALPHANUM);
     $dir          = optional_param('dir', 'ASC', PARAM_ALPHA);
     $page         = optional_param('page', 0, PARAM_INT);
-    $perpage      = optional_param('perpage', 30, PARAM_INT);        // how many per page
-    $ru           = optional_param('ru', '2', PARAM_INT);            // show remote users
-    $lu           = optional_param('lu', '2', PARAM_INT);            // show local users
-    $acl          = optional_param('acl', '0', PARAM_INT);           // id of user to tweak mnet ACL (requires $access)
+    $perpage      = optional_param('perpage', 30, PARAM_INT);        // How many per page.
+    $ru           = optional_param('ru', '2', PARAM_INT);            // Show remote users.
+    $lu           = optional_param('lu', '2', PARAM_INT);            // Show local users.
+    $acl          = optional_param('acl', '0', PARAM_INT);           // Id of user to tweak mnet ACL (requires $access).
     $suspend      = optional_param('suspend', 0, PARAM_INT);
     $unsuspend    = optional_param('unsuspend', 0, PARAM_INT);
     $unlock       = optional_param('unlock', 0, PARAM_INT);
@@ -83,7 +70,7 @@ class ldapsync_purgeusers_action_form extends moodleform {
     $site = get_site();
 
 if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('moodle/user:delete', $sitecontext)) {
-    print_error('nopermissions', 'error', '', 'edit/delete users');
+    throw new \moodle_exception('nopermissions', 'error', '', 'edit/delete users');
 }
 
     $stredit   = get_string('edit');
@@ -96,40 +83,47 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
     $strconfirm = get_string('confirm');
     $strresendemail = get_string('resendemail');
 
-    $returnurl = new moodle_url('/admin/tool/ldapsync/user.php', ['sort' => $sort, 'dir' => $dir, 'perpage' => $perpage, 'page' => $page]);
+    $returnurl = new moodle_url(
+        '/admin/tool/ldapsync/user.php',
+        ['sort' => $sort, 'dir' => $dir, 'perpage' => $perpage, 'page' => $page]
+    );
 
-    // create the user filter form
+    // Create the user filter form.
     $fieldnames = ['realname' => 1, 'lastname' => 1, 'firstname' => 1, 'username' => 1, 'email' => 1, 'city' => 1,
                     'country' => 1, 'confirmed' => 1, 'suspended' => 1, 'profile' => 1, 'courserole' => 1,
                     'anycourses' => 0, 'systemrole' => 1, 'cohort' => 1, 'firstaccess' => 1, 'lastaccess' => 1,
-                    'neveraccessed' => 0, 'timecreated' => 1, 'timemodified' => 1, 'nevermodified' => 1, 'auth' => 0, 'mnethostid' => 1,
-                    'idnumber' => 1, 'activeonldap' => 0, 'additionalldapfilter' => 1];
+                    'neveraccessed' => 0, 'timecreated' => 1, 'timemodified' => 1, 'nevermodified' => 1, 'auth' => 0,
+                    'mnethostid' => 1, 'idnumber' => 1, 'activeonldap' => 0, 'additionalldapfilter' => 1];
 
     $ufiltering = new \tool_ldapsync\user_filtering($fieldnames);
 
-    // array of bulk operations
-    // create the bulk operations form
+    // Create the bulk operations form.
     $actionform = new ldapsync_purgeusers_action_form();
     if ($data = $actionform->get_data()) {
-        // $SESSION->bulk_users= array();
-        // add_selection_all($ufiltering);
         $SESSION->ufiltering = serialize($ufiltering);
-        // check if an action should be performed and do so
+        // Check if an action should be performed and do so.
         switch ($data->action) {
             case 1:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/user/user_bulk_confirm.php');
+                break;
             case 2:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/user/user_bulk_message.php');
+                break;
             case 3:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/tool/ldapsync/user_bulk_delete.php');
+                break;
             case 4:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/tool/ldapsync/user_bulk_display.php');
+                break;
             case 5:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/tool/ldapsync/user_bulk_download.php');
+                break;
             case 7:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/user/user_bulk_forcepasswordchange.php');
+                break;
             case 8:
                 redirect($CFG->wwwroot . '/' . $CFG->admin . '/user/user_bulk_cohortadd.php');
+                break;
         }
     }
 
@@ -138,7 +132,7 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
     if ($confirmuser && confirm_sesskey()) {
         require_capability('moodle/user:update', $sitecontext);
         if (!$user = $DB->get_record('user', ['id' => $confirmuser, 'mnethostid' => $CFG->mnet_localhost_id])) {
-            print_error('nousers');
+            throw new \moodle_exception('nousers');
         }
 
         $auth = get_auth_plugin($user->auth);
@@ -153,12 +147,12 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
         }
     } else if ($resendemail && confirm_sesskey()) {
         if (!$user = $DB->get_record('user', ['id' => $resendemail, 'mnethostid' => $CFG->mnet_localhost_id, 'deleted' => 0])) {
-            print_error('nousers');
+            throw new \moodle_exception('nousers');
         }
 
         // Prevent spamming users who are already confirmed.
         if ($user->confirmed) {
-            print_error('alreadyconfirmed');
+            throw new \moodle_exception('alreadyconfirmed');
         }
 
         $returnmsg = get_string('emailconfirmsentsuccess');
@@ -169,16 +163,16 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
         }
 
         redirect($returnurl, $returnmsg, null, $messagetype);
-    } else if ($delete && confirm_sesskey()) {              // Delete a selected user, after confirmation
+    } else if ($delete && confirm_sesskey()) {              // Delete a selected user, after confirmation.
         require_capability('moodle/user:delete', $sitecontext);
 
         $user = $DB->get_record('user', ['id' => $delete, 'mnethostid' => $CFG->mnet_localhost_id], '*', MUST_EXIST);
 
         if ($user->deleted) {
-            print_error('usernotdeleteddeleted', 'error');
+            throw new \moodle_exception('usernotdeleteddeleted', 'error');
         }
         if (is_siteadmin($user->id)) {
-            print_error('useradminodelete', 'error');
+            throw new \moodle_exception('useradminodelete', 'error');
         }
 
         if ($confirm != md5($delete)) {
@@ -205,19 +199,22 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
         }
     } else if ($acl && confirm_sesskey()) {
         if (!has_capability('moodle/user:update', $sitecontext)) {
-            print_error('nopermissions', 'error', '', 'modify the NMET access control list');
+            throw new \moodle_exception('nopermissions', 'error', '', 'modify the NMET access control list');
         }
         if (!$user = $DB->get_record('user', ['id' => $acl])) {
-            print_error('nousers', 'error');
+            throw new \moodle_exception('nousers', 'error');
         }
         if (!is_mnet_remote_user($user)) {
-            print_error('usermustbemnet', 'error');
+            throw new \moodle_exception('usermustbemnet', 'error');
         }
         $accessctrl = strtolower(required_param('accessctrl', PARAM_ALPHA));
         if ($accessctrl != 'allow' && $accessctrl != 'deny') {
-            print_error('invalidaccessparameter', 'error');
+            throw new \moodle_exception('invalidaccessparameter', 'error');
         }
-        $aclrecord = $DB->get_record('mnet_sso_access_control', ['username' => $user->username, 'mnet_host_id' => $user->mnethostid]);
+        $aclrecord = $DB->get_record(
+            'mnet_sso_access_control',
+            ['username' => $user->username, 'mnet_host_id' => $user->mnethostid]
+        );
         if (empty($aclrecord)) {
             $aclrecord = new stdClass();
             $aclrecord->mnet_host_id = $user->mnethostid;
@@ -263,7 +260,7 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
 
     echo $OUTPUT->header();
 
-    // Carry on with the user listing
+    // Carry on with the user listing.
     $context = context_system::instance();
     // These columns are always shown in the users list.
     $requiredcolumns = ['city', 'country', 'lastaccess'];
@@ -413,9 +410,9 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
             $buttons = [];
             $lastcolumn = '';
 
-            // delete button
+            // Delete button.
             if (has_capability('moodle/user:delete', $sitecontext)) {
-                // no deleting of self, mnet accounts or admins allowed
+                // No deleting of self, mnet accounts or admins allowed.
                 if (
                     ($user->id != $USER->id) &&
                     (!is_mnet_remote_user($user)) &&
@@ -426,12 +423,17 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
                 }
             }
 
-            // suspend button
+            // Suspend button.
             if (has_capability('moodle/user:update', $sitecontext)) {
                 if (is_mnet_remote_user($user)) {
-                    // mnet users have special access control, they can not be deleted the standard way or suspended
+                    // The mnet users have special access control, they can not be deleted the standard way or suspended.
                     $accessctrl = 'allow';
-                    if ($acl = $DB->get_record('mnet_sso_access_control', ['username' => $user->username, 'mnet_host_id' => $user->mnethostid])) {
+                    if (
+                        $acl = $DB->get_record(
+                            'mnet_sso_access_control',
+                            ['username' => $user->username, 'mnet_host_id' => $user->mnethostid]
+                        )
+                    ) {
                         $accessctrl = $acl->accessctrl;
                     }
                     $changeaccessto = ($accessctrl == 'deny' ? 'allow' : 'deny');
@@ -442,7 +444,7 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
                         $url = new moodle_url($returnurl, ['unsuspend' => $user->id, 'sesskey' => sesskey()]);
                         $buttons[] = html_writer::link($url, $OUTPUT->pix_icon('t/show', $strunsuspend));
                     } else {
-                        // no suspending of admins or self!
+                        // No suspending of admins or self!
                         if ($user->id != $USER->id && !is_siteadmin($user)) {
                             $url = new moodle_url($returnurl, ['suspend' => $user->id, 'sesskey' => sesskey()]);
                             $buttons[] = html_writer::link($url, $OUTPUT->pix_icon('t/hide', $strsuspend));
@@ -456,18 +458,18 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
                 }
             }
 
-            // edit button
+            // Edit button.
             if (has_capability('moodle/user:update', $sitecontext)) {
-                // prevent editing of admins by non-admins
+                // Prevent editing of admins by non-admins.
                 if (is_siteadmin($USER) || !is_siteadmin($user)) {
                     $url = new moodle_url('/user/editadvanced.php', ['id' => $user->id, 'course' => $site->id]);
                     $buttons[] = html_writer::link($url, $OUTPUT->pix_icon('t/edit', $stredit));
                 }
             }
 
-            // the last column - confirm or mnet info
+            // The last column - confirm or mnet info.
             if (is_mnet_remote_user($user)) {
-                // all mnet users are confirmed, let's print just the name of the host there
+                // All mnet users are confirmed, let's print just the name of the host there.
                 if (isset($mnethosts[$user->mnethostid])) {
                     $lastcolumn = get_string($accessctrl, 'mnet') . ': ' . $mnethosts[$user->mnethostid]->name;
                 } else {
@@ -475,7 +477,13 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
                 }
             } else if ($user->confirmed == 0) {
                 if (has_capability('moodle/user:update', $sitecontext)) {
-                    $lastcolumn = html_writer::link(new moodle_url($returnurl, ['confirmuser' => $user->id, 'sesskey' => sesskey()]), $strconfirm);
+                    $lastcolumn = html_writer::link(
+                        new moodle_url(
+                            $returnurl,
+                            ['confirmuser' => $user->id, 'sesskey' => sesskey()]
+                        ),
+                        $strconfirm
+                    );
                 } else {
                     $lastcolumn = "<span class=\"dimmed_text\">" . get_string('confirm') . "</span>";
                 }
@@ -515,7 +523,7 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
         }
     }
 
-    // add filters
+    // Add filters.
     $ufiltering->display_add();
     $ufiltering->display_active();
 
@@ -525,10 +533,6 @@ if (!has_capability('moodle/user:update', $sitecontext) && !has_capability('mood
         echo html_writer::end_tag('div');
         echo $OUTPUT->paging_bar($usercount, $page, $perpage, $baseurl);
     }
-    // if (has_capability('moodle/user:create', $sitecontext)) {
-    // $url = new moodle_url('/user/editadvanced.php', array('id' => -1));
-    // echo $OUTPUT->single_button($url, get_string('addnewuser'), 'get');
-    // }
 
     $actionform->display();
 

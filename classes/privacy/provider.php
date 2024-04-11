@@ -25,8 +25,6 @@
 
 namespace tool_ldapsync\privacy;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Privacy Subsystem for tool_ldapsync implementing null_provider.
  *

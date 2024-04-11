@@ -19,7 +19,7 @@
  *
  * @package tool_ldapsync
  * @author Carson Tam <carson.tam@ucsf.edu>
- * @copyright Copyright (c) 2020, UCSF Center for Knowledge Management
+ * @copyright Copyright (c) 2024, UCSF Center for Knowledge Management
  *
  * Run this script on a daily basis via cron job to synchronize user data between a given LDAP server
  * and the moodle database.
@@ -45,9 +45,9 @@ class importer {
     const MOODLE_TEMP_TABLE = 'ckm_extuser';
 
     /**
-     * @var string MOODLE_AUTH_ADAPTER hardwired to use Shibboleth authentication.
+     * @var string MOODLE_AUTH_ADAPTER hardwired to use nologin authentication as the default.
      */
-    const MOODLE_AUTH_ADAPTER = 'shibboleth';
+    const MOODLE_AUTH_ADAPTER = 'nologin';
 
     /**
      * @var string LDAP datetime format
@@ -59,66 +59,53 @@ class importer {
      */
     const DB_BATCH_LIMIT = 1000;
 
-     // The fields we can lock and update from/to external authentication backends
-     // @var array
+    /**
+     * The fields we can lock and update from/to external authentication backends
+     * @var array
+     */
     private $userfields = \core_user::AUTHSYNCFIELDS;
 
-    // Moodle custom fields to sync with.
-    // @var array()
+    /**
+     * Moodle custom fields to sync with.
+     * @var array()
+     */
     private $customfields = null;
 
-
-    // The configuration details for the plugin.
-    // @var object
+    /**
+     * The configuration details for the plugin.
+     * @var object
+     */
     protected $config;
+
+    /**
+     * @var string $ldapDt LDAP formatted datetime
+     */
+    protected $ldapdt = '';
 
     /**
      * @var integer $_ts UNIX timestamp
      */
-    protected $_ts = 0;
-
-    /**
-     * @var string $_ldapDt LDAP formatted datetime
-     */
-    protected $_ldapdt = '';
-
-    /**
-     * @var array $_ldapmoodleuserattrmap maps user table column names to LDAP user record attribute names
-     */
-    protected $_ldapmoodleuserattrmap = [
-        'uid' => 'uid',
-        'edupersonprincipalname' => 'username',
-        'givenname' => 'firstname',
-        'ucsfedupreferredgivenname' => 'preferred_firstname',
-        'sn' => 'lastname',
-        'mail' => 'email',
-        'ucsfeduidnumber' => 'idnumber',
-        'createtimestamp' => 'timecreated',
-        'modifytimestamp' => 'timemodified',
-        // 'ucsfEduPreferredPronoun' => 'pronoun'
-    ];
-
+    protected $ts = 0;
 
     /**
      * @param integer $ts
      */
     public function __construct($ts = null) {
-        // Making sure php-ldap extension is present
+        // Making sure php-ldap extension is present.
         if (!extension_loaded('ldap')) {
             throw new Exception("php-ldap extension is not loaded in memory. \n");
         }
 
-        // Use $this->config
         $this->config = get_config('tool_ldapsync');
 
         if (!empty($ts)) {
-            $this->_ts = $ts;
+            $this->ts = $ts;
         } else if (!empty($this->config->last_synched_on)) {
-            $this->_ts = strtotime($this->config->last_synched_on);
+            $this->ts = strtotime($this->config->last_synched_on);
         }
 
-        if (!empty($this->_ts)) {
-            $this->_ldapDt = self::formatLdapTimestamp($this->_ts);
+        if (!empty($this->ts)) {
+            $this->_ldapDt = self::formatLdapTimestamp($this->ts);
         }
 
         if (empty($this->config->ldapencoding)) {
@@ -128,7 +115,7 @@ class importer {
             $this->config->user_type = 'default';
         }
 
-        // Merge data mapping info from 'auth_tool_ldapsync'
+        // Merge data mapping info from 'auth_tool_ldapsync'.
         $mapconfig = get_config('auth_tool_ldapsync');
         foreach ($mapconfig as $key => $value) {
             $this->config->{$key} = $value;
@@ -140,15 +127,15 @@ class importer {
 
         $default = ldap_getdefaults();
 
-        // Use defaults if values not given
+        // Use defaults if values not given.
         foreach ($default as $key => $value) {
-            // watch out - 0, false are correct values too
+            // Watch out - 0, false are correct values too.
             if (!isset($this->config->{$key}) || $this->config->{$key} == '') {
                 $this->config->{$key} = $value[$this->config->user_type];
             }
         }
 
-        // Hack prefix to objectclass
+        // Hack prefix to objectclass.
         $this->config->objectclass = ldap_normalise_objectclass($this->config->objectclass);
     }
 
@@ -156,7 +143,7 @@ class importer {
      * Utility function, converts a given UNIX timestamp into a LDAP formatted datetime string.
      * @param integer $ts
      * @return string
-     * @todo refactor this out into a utility class
+     * TODO: refactor this out into a utility class
      */
     public static function formatldaptimestamp($ts): string {
         $datetime = \DateTime::createFromFormat('U', $ts);
@@ -168,12 +155,12 @@ class importer {
      */
     public function run() {
         // 1. get the new/updated entries from LDAP
-        $ldap = $this->_connectToLdap();
+        $ldap = $this->connecttoldap();
         $start = time();
-        $data = $this->_getUpdatesFromLdap($ldap, $this->_ldapDt);
-        $this->ldap_close($ldap); // cleanup
+        $data = $this->getupdatesfromldap($ldap, $this->ldapdt);
+        $this->ldap_close();
         // 2. add/merge entries into Moodle
-        $this->_updateMoodleAccounts($data);
+        $this->updatemoodleaccounts($data);
         set_config('last_synched_on', date('c', $start), 'tool_ldapsync');
     }
 
@@ -185,7 +172,7 @@ class importer {
     public function user_exists($username) {
         $extusername = core_text::convert($username, 'utf-8', $this->config->ldapencoding);
 
-        // Returns true if given username exists on ldap
+        // Returns true if given username exists on ldap.
         $users = $this->ldap_get_userlist('(' . $this->config->user_attribute . '=' . ldap_filter_addslashes($extusername) . ')');
         return count($users);
     }
@@ -203,7 +190,7 @@ class importer {
                 return "({$ldapcampusidproperty}={$campusid})";
             }, $userids);
             $users = [];
-            // Split into groups of 50 to avoid LDAP query length limits
+            // Split into groups of 50 to avoid LDAP query length limits.
             foreach (array_chunk($filterterms, 50) as $terms) {
                 $filtertermsstring = implode('', $terms);
                 $filter = "(|{$filtertermsstring})";
@@ -343,9 +330,7 @@ class importer {
                         $rs->modifytimestamp = $modifytimestamp;
                         $rs->lastupdated = $lastupdatedtime;
 
-                        // echo "Updating ldap user {$rs->cn}...";
                         $DB->update_record('tool_ldapsync', $rs);
-                        // echo "done.\n";
                     } else {
                         $rs = new stdClass();
                         $rs->uid = $uid;
@@ -376,7 +361,7 @@ class importer {
             }
         }
 
-        // If paged results were used, make sure the current connection is completely closed
+        // If paged results were used, make sure the current connection is completely closed.
         $this->ldap_close($ldappagedresults);
 
         return $ldapusers;
@@ -389,15 +374,6 @@ class importer {
      * @param $filter An LDAP search filter to select desired users
      * @return array of LDAP user names converted to UTF-8
      */
-    private function _ldap_get_userlist($filter = '*') {
-        $userlist = explode(')(edupersonprincipalname=', ltrim(rtrim($filter, ')'), '(|(edupersonprincipalname='));
-        for ($i = 0; $i < 5; $i++) {
-            // unset($userlist[rand(0, count($userlist))]);
-            unset($userlist[$i]);
-        }
-        return $userlist;
-    }
-
     private function ldap_get_userlist($filter = '*') {
         global $CFG;
 
@@ -405,7 +381,7 @@ class importer {
 
         if ($filter == '*') {
             $filter = '(&(' . $this->config->user_attribute . '=*)' . $this->config->objectclass . ')';
-            // @TODO: Is there a better way to do this?
+            // Is there a better way to do this?
             // If cache file exists, use it, to improve performance.
             $cachefile = $CFG->cachedir . '/misc/ldapsync_userlist.json';
             if (file_exists($cachefile)) {
@@ -484,17 +460,17 @@ class importer {
             } while ($ldappagedresults && !empty($ldapcookie));
         }
 
-        // If paged results were used, make sure the current connection is completely closed
+        // If paged results were used, make sure the current connection is completely closed.
         $this->ldap_close($ldappagedresults);
         return $fresult;
     }
 
     /**
      * Connects and binds to a LDAP server, then returns a handle to it.
-     * @return resource the connected and bound LDAP handle
+     * @return \LDAP\Connection the connected and bound LDAP handle
      * @throws Exception if connectivity to LDAP server couldn't be fully established.
      */
-    protected function _connecttoldap() {
+    protected function connecttoldap() {
         echo "Connecting to LDAP server ... ";
         if (!$ldapconnection = $this->ldap_connect()) {
             throw new Exception("Couldn't bind to LDAP server.");
@@ -507,7 +483,7 @@ class importer {
      * Connect to the LDAP server, using the plugin configured
      * settings. It's actually a wrapper around ldap_connect_moodle()
      *
-     * @return resource A valid LDAP connection (or dies if it can't connect)
+     * @return mixed connection result or false.
      */
     public function ldap_connect() {
         // Cache ldap connections. They are expensive to set up
@@ -520,6 +496,7 @@ class importer {
             return $this->ldapconnection;
         }
 
+        $debuginfo = '';
         if (
             $ldapconnection = ldap_connect_moodle(
                 $this->config->host_url,
@@ -537,15 +514,15 @@ class importer {
             return $ldapconnection;
         }
 
-        print_error('auth_ldap_noconnect_all', 'auth_ldap', '', $debuginfo);
+        throw new \moodle_exception('auth_ldap_noconnect_all', 'auth_ldap', '', $debuginfo);
     }
 
     /**
      * Disconnects from a LDAP server
      *
-     * @param force boolean Forces closing the real connection to the LDAP server, ignoring any
-     *                      cached connections. This is needed when we've used paged results
-     *                      and want to use normal results again.
+     * @param boolean $force Forces closing the real connection to the LDAP server, ignoring any
+     *                       cached connections. This is needed when we've used paged results
+     *                       and want to use normal results again.
      */
     public function ldap_close($force = false) {
         $this->ldapconns--;
@@ -558,19 +535,20 @@ class importer {
 
     /**
      * Searches LDAP for user records that were updated/created after a given datetime.
-     * @param resource $ldap the LDAP server handle
+     * @param \LDAP\Connection $ldap the LDAP connection
      * @param string $baseDn the base DN
      * @param string $ldapTimestamp the datetime
      * @return array nested array of user records
      * @throws Exception if search fails
      */
-    protected function _getupdatesfromldap($ldap, $ldaptimestamp = null) {
+    protected function getupdatesfromldap($ldap, $ldaptimestamp = null) {
         if (empty($ldaptimestamp)) {
             echo "Start prowling LDAP for all records... ";
             $filter = '(&(' . $this->config->user_attribute . '=*)' . $this->config->objectclass . ')';
         } else {
             echo "Start prowling LDAP for records added and/or updated since '{$ldaptimestamp}' ... ";
-            $filter = '(&(' . $this->config->user_attribute . '=*)' . $this->config->objectclass . "(|(createTimestamp>=$ldaptimestamp)(modifyTimestamp>=$ldaptimestamp))" . ')';
+            $filter = '(&(' . $this->config->user_attribute . '=*)' . $this->config->objectclass
+                      . "(|(createTimestamp>=$ldaptimestamp)(modifyTimestamp>=$ldaptimestamp))" . ')';
         }
 
         $attrmap = $this->ldap_attributes();
@@ -625,14 +603,14 @@ class importer {
                 $result = [];
                 $skip = false;
 
-                // convert key name to lowercase
+                // Convert key name to lowercase.
                 foreach ($ldapattrs as $key => $value) {
                     $ldapattrsls[core_text::strtolower($key)] = $value;
                 }
 
                 foreach ($searchattribs as $attr) {
                     if ('uid' == $attr) {
-                        // always lowercase the UID
+                        // Always use lowercase for the UID.
                         $result[$attr] = core_text::strtolower($ldapattrsls[$attr][0]);
                     } else {
                         if (isset($ldapattrsls[$attr])) {
@@ -644,21 +622,18 @@ class importer {
                                 }
                                 $result[$attr] = $email;
                             } else if (
-                                (core_text::strtolower('sn') == $attr)
-                                       || (core_text::strtolower('givenname') == $attr)
+                                        core_text::strtolower('sn') == $attr
+                                        || (core_text::strtolower('ucsfEduPreferredLastName') == $attr)
+                                        || (core_text::strtolower('givenname') == $attr)
+                                        || (core_text::strtolower('ucsfEduPreferredGivenName') == $attr)
+                                        || (core_text::strtolower('initials') == $attr)
+                                        || (core_text::strtolower('ucsfEduPreferredMiddleName') == $attr)
+                                        || (core_text::strtolower('displayName') == $attr)
                             ) {
-                                // Fixing: this field could have 'question mark' in it.
-                                // If so, just remove it.  ($DB->execute() does not like '?')
+                                // Fixing: these fields could have 'question mark' in it.
+                                // If so, just remove it.  ($DB->execute() does not like '?').
                                 if (strstr($ldapattrsls[$attr][0], '?')) {
                                     $result[$attr] = str_replace('?', '', $ldapattrsls[$attr][0]);
-                                } else {
-                                    $result[$attr] = $ldapattrsls[$attr][0];
-                                }
-                            } else if (core_text::strtolower('ucsfEduPreferredGivenName') == $attr) {
-                                // Fixing: this field could have 'question mark' in it.
-                                // If so, do not use.  ($DB->execute() does not like '?')
-                                if (strstr($ldapattrsls[$attr][0], '?')) {
-                                    $result[$attr] = '';
                                 } else {
                                     $result[$attr] = $ldapattrsls[$attr][0];
                                 }
@@ -673,7 +648,8 @@ class importer {
                                 $result[$attr] = $ldapattrsls[$attr][0];
                             }
                         } else {
-                            if (core_text::strtolower('eduPersonPrincipalName') == $attr) {   // we will skip this user
+                            if (core_text::strtolower('eduPersonPrincipalName') == $attr) {
+                                // We will skip this user.
                                 $skip = true;
                             }
                             $result[$attr] = '';
@@ -700,44 +676,55 @@ class importer {
      * @see auth_plugin_ldap::sync_users()
      * @throws Exception on database/SQL related failures
      */
-    protected function _updatemoodleaccounts(array $data) {
+    protected function updatemoodleaccounts(array $data) {
         global $CFG, $DB;
         if (!count($data)) {
             return;
         }
-        // Convert key names to lower case in each record
-        // (Should already be lower case.
-        // $dataLS = array();
-        // foreach ($data as $record) {
-        // $recordLS = array();
-        // foreach ($record as $key => $value) {
-        // $recordLS[core_text::strtolower($key)] = $value;
-        // }
-        // $dataLS[] = $recordLS;
-        // }
         $usertblname = $CFG->prefix . 'user';
         $stagingtblname = $CFG->prefix . self::MOODLE_TEMP_TABLE;
-        // attempt to delete a previous temp table
+        // Attempt to delete a previous temp table.
         $deletetemptablesql = "DROP TEMPORARY TABLE IF EXISTS {$stagingtblname}";
         $createtemptablesql = <<< EOL
 CREATE TEMPORARY TABLE {$stagingtblname}
 (
-  uid VARCHAR(100),
-  username VARCHAR(100),
-  mnethostid BIGINT(10) UNSIGNED,
-  firstname VARCHAR(100),
-  lastname VARCHAR(100),
-  preferred_firstname VARCHAR(100),
-  email VARCHAR(100),
-  idnumber VARCHAR(255),
-  timecreated BIGINT(10) UNSIGNED,
-  timemodified BIGINT(10) UNSIGNED,
-  -- pronoun VARCHAR(255),
-  PRIMARY KEY (username, mnethostid)
-)
-ENGINE=MyISAM
-COLLATE utf8_unicode_ci
+mnethostid BIGINT(10) UNSIGNED,
 EOL;
+        $attrmap = $this->ldap_attributes();
+        $searchattribs = ['uid', 'createtimestamp', 'modifytimestamp'];
+        foreach ($attrmap as $key => $values) {
+            if (!is_array($values)) {
+                $values = [$values];
+            }
+            foreach ($values as $value) {
+                $val = core_text::strtolower(trim($value));
+                if (!empty($val) && !in_array($val, $searchattribs)) {
+                    array_push($searchattribs, $val);
+                }
+            }
+        }
+        foreach ($searchattribs as $attr) {
+            $dbvartype = '';
+            switch ($attr) {
+                case 'mnethostid':
+                case 'timecreated':
+                case 'timemodified':
+                    $dbvartype = "BIGINT(10) UNSIGNED";
+                    break;
+                case 'idnumber':
+                    $dbvartype = "VARCHAR(255)";
+                    break;
+                default:
+                    $dbvartype = "VARCHAR(100)";
+            }
+            if (!empty($attr)) {
+                $createtemptablesql .= " $attr $dbvartype,";
+            }
+        }
+        $createtemptablesql .= " PRIMARY KEY ({$attrmap['username']}, mnethostid) )
+                                    ENGINE=MyISAM
+                                    COLLATE utf8_unicode_ci";
+
         echo "Delete temporary table if exists ... ";
         if (!$DB->execute($deletetemptablesql)) {
             echo "Fail to execute SQL, ($deletetemptablesql).";
@@ -746,28 +733,29 @@ EOL;
         }
 
         echo "Creating staging table ... ";
+
         if (!$DB->execute($createtemptablesql)) {
             throw new Exception("Couldn't create staging table.");
         }
         echo "done.\n";
         // 1. insert all LDAP records into temp table
         // --------------------------------------------
-        $attrnames = array_keys($this->_ldapmoodleuserattrmap);
-        $colnames = array_values($this->_ldapmoodleuserattrmap);
+        $attrnames = $searchattribs;
 
         echo "Populating staging table ... ";
         $total = count($data);
-        // populate the staging table in batches of DB_INSERT_BATCH_LIMIT records.
+        // Populate the staging table in batches of DB_INSERT_BATCH_LIMIT records.
         for ($i = 0, $n = (int) ceil($total / self::DB_BATCH_LIMIT); $i < $n; $i++) {
-            // build SQL string
+            // Build SQL string.
             for ($j = $i * self::DB_BATCH_LIMIT, $m = $j + self::DB_BATCH_LIMIT; $j < $m && $j < $total; $j++) {
                 $stagingsql =
-                    "INSERT IGNORE INTO {$stagingtblname} (mnethostid, " . implode(', ', $colnames) . ')'
-                    . ' VALUES (?, ' . implode(', ', array_fill(0, count($colnames), '?')) . ')';
+                    "INSERT IGNORE INTO {$stagingtblname} (mnethostid, " . implode(', ', $searchattribs) . ')'
+                    . ' VALUES (?, ' . implode(', ', array_fill(0, count($searchattribs), '?')) . ')';
                 $stagingsqlvalues = [];
                 $record = $data[$j];
-                if (!empty($record['edupersonprincipalname'])) {
-                    $stagingsqlvalues[] = "{$CFG->mnet_localhost_id}";
+
+                if (!empty($record[$attrmap['username']])) {
+                        $stagingsqlvalues[] = "{$CFG->mnet_localhost_id}";
                     foreach ($attrnames as $attrname) {
                         $attrvalue = $record[$attrname] ?? '';
                         $stagingsqlvalues[] = $attrvalue;
@@ -793,29 +781,42 @@ EOL;
         // 2. update existing user records
         // ------------------------------------------
         $sql  = " FROM {$stagingtblname} ";
-        $sql .= " JOIN {$usertblname} ON {$stagingtblname}.username = {$usertblname}.username";
+        $sql .= " JOIN {$usertblname} ON {$stagingtblname}.{$attrmap['username']} = {$usertblname}.username";
         $sql .= " AND {$stagingtblname}.mnethostid = {$usertblname}.mnethostid";
         $sql .= " WHERE {$usertblname}.deleted = 0 AND {$usertblname}.auth = '";
         $sql .= empty($this->config->authtype) ? self::MOODLE_AUTH_ADAPTER : $this->config->authtype;
         $sql .= "'";
 
         $countsql = "SELECT COUNT(*) as c " . $sql;
-
-        $selectsql = "SELECT {$usertblname}.id, {$stagingtblname}.uid";
-        foreach ($colnames as $colname) {
-            if (!in_array($colname, ['uid', 'firstname', 'preferred_firstname'])) {
-                $selectsql .= ", {$stagingtblname}.{$colname} AS new_{$colname}";
-                $selectsql .= ", {$usertblname}.{$colname}";
+        $selectsql = "SELECT {$usertblname}.id,
+                             {$stagingtblname}.uid AS uid,
+                             {$stagingtblname}.{$attrmap['username']} AS username,
+                             {$stagingtblname}.createtimestamp AS timecreated,
+                             {$stagingtblname}.modifytimestamp AS timemodified";
+        foreach ($this->userfields as $field) {
+            if (array_key_exists($field, $attrmap)) {
+                if ($selectsql !== 'SELECT ') {
+                    // This is not the first item, then we append a comma to it
+                    // before adding the next item.
+                    $selectsql .= ', ';
+                }
+                if (!is_array($attrmap[$field])) {
+                    $selectsql .= "{$attrmap[$field]} ";
+                } else {
+                    $selectsqlend = '';
+                    foreach ($attrmap[$field] as $attr) {
+                        $selectsql .= "CASE
+                                        WHEN '' <> TRIM(COALESCE({$stagingtblname}.{$attr}, ''))
+                                        THEN {$stagingtblname}.{$attr}
+                                        ELSE ";
+                        $selectsqlend .= "END ";
+                    }
+                    $selectsql .= "'' $selectsqlend";
+                }
+                $selectsql .= "AS $field ";
             }
         }
-        // special case "first name": use the preferred first name by default, fall back to first name
-        $selectsql .= <<< EOQ
-, {$usertblname}.firstname
-, CASE
-WHEN '' = TRIM(COALESCE({$stagingtblname}.preferred_firstname, '')) THEN {$stagingtblname}.firstname
-ELSE {$stagingtblname}.preferred_firstname
-END AS new_firstname
-EOQ;
+
         $selectsql .= ' ' . $sql;
         $result = $DB->get_record_sql($countsql);
         $total = (int) $result->c;
@@ -831,69 +832,48 @@ EOQ;
                 foreach ($records as $record) {
                     $user = new stdClass();
                     foreach ($record as $key => $value) {
-                        $user->{$key} = $value;
-                    }
-                    $userid = $user->id;
-                    foreach ($colnames as $colname) {
-                        $newcolname = 'new_' . $colname;
-                        if (
-                            ($colname != 'uid') // does not exist in mdl_user table, ignore
-                            && ($colname != 'preferred_firstname') // does not exist in mdl_user table, ignore
-                            && ($user->{$colname} != $user->{$newcolname})
-                        ) {
-                            switch ($colname) {
-                                // NEVER attempt to update idnumber or username
-                                case 'uid':
-                                case 'username':
-                                case 'idnumber':
-                                case 'email':
-                                    // if the newly retrieved email address is empty then ignore it.
-                                    // @see https://redmine.library.ucsf.edu/issues/36
-                                    if (!trim($user->{$newcolname})) {
-                                        continue 2;  // continue to update the database
-                                    }
-                                    break;
-                                case 'timecreated':
-                                    if (
-                                        empty($user->{$colname}) ||
-                                        !empty($user->{$newcolname}) &&
-                                        ($user->{$colname} > $user->{$newcolname})
-                                    ) {
-                                        continue 2;  // continue to update the database
-                                    }
-                                    break;
-                                case 'timemodified':
-                                    if (
-                                        empty($user->{$colname}) &&
-                                        !empty($user->{$newcolname}) &&
-                                        ($user->{$colname} < $user->{$newcolname})
-                                    ) {
-                                        continue 2;  // continue to update the database
-                                    }
-                                    break;
-                                default: // do nothing
-                            }
-
-                            echo "- Updating user '{$user->username}', attribute '" . $colname . "' to '" . $user->{$newcolname} . "' ... ";
-                            if (false === $DB->set_field('user', $colname, $user->{$newcolname}, ['id' => $userid])) {
-                                echo "FAIL\n";
-                            } else {
-                                echo "OK\n";
-                                if (($colname === 'timecreated') || ($colname === 'timemodified')) {
-                                    $fn = ($colname === 'timecreated') ? 'createtimestamp' : 'modifytimestamp';
-                                    $ts = $DB->get_field('tool_ldapsync', $fn, ['cn' => $user->username]);
-                                    if ($ts != $user->{$newcolname}) {
-                                        echo "- Updating tool_ldapsync table, user '{$user->username}', field '" . $fn . "' to '" . $user->{$newcolname} . "' ... ";
-                                        if (false === $DB->set_field('tool_ldapsync', $fn, $user->{$newcolname}, ['cn' => $user->username])) {
-                                            echo "FAIL\n";
-                                        } else {
-                                            echo "OK\n";
-                                            $DB->set_field('tool_ldapsync', 'lastupdated', time(), ['cn' => $user->username]);
-                                        }
-                                    }
-                                }
-                            }
+                        if (!empty($value)) {
+                            $user->{$key} = $value;
                         }
+                    }
+                    try {
+                        $DB->update_record('user', $user);
+                    } catch (Exception $e) {
+                        echo "- Failed to update user '{user->username} with the following error: {$e->getMessage()}.\n";
+                        continue;
+                    }
+                    // Update tool_ldapsync table.
+                    $select = sprintf("%s = :cn", $DB->sql_compare_text('cn'));
+                    if ($rs = $DB->get_record_select('tool_ldapsync', $select, ['cn' => $user->username])) {
+                        if (isset($user->timecreated)) {
+                            $rs->createtimestamp = $user->timecreated;
+                            $rs->lastupdated = time();
+                        }
+                        if (isset($user->timemodified)) {
+                            $rs->modifytimestamp = $user->timemodified;
+                            $rs->lastupdated = time();
+                        }
+
+                        echo "- Updating tool_ldapsync table, user '{$user->username}', attributes\n" . var_export($rs, 1);
+                        $DB->update_record('tool_ldapsync', $rs);
+                    } else {
+                        $rs = new stdClass();
+                        $rs->uid = $user->uid;
+                        $rs->cn = $user->username;
+                        if (isset($user->timecreated)) {
+                            $rs->createtimestamp = $user->timecreated;
+                        } else {
+                            $rs->createtimestamp = time();
+                        }
+                        if (isset($user->timemodified)) {
+                            $rs->modifytimestamp = $user->timemodified;
+                        } else {
+                            $rs->modifytimestamp = time();
+                        }
+                        $rs->lastupdated = time();
+
+                        echo "- Inserting tool_ldapsync table, user '{$user->username}', attributes\n" . var_export($rs, 1);
+                        $rs->id = $DB->insert_record('tool_ldapsync', $rs, true);
                     }
                 }
             }
@@ -903,24 +883,33 @@ EOQ;
         // 3. create new records
         // ------------------------------------------
         $sql = " FROM {$stagingtblname}";
-        $sql .= " LEFT JOIN {$usertblname} ON {$stagingtblname}.username = {$usertblname}.username";
+        $sql .= " LEFT JOIN {$usertblname} ON {$stagingtblname}.{$attrmap['username']} = {$usertblname}.username";
         $sql .= " AND {$stagingtblname}.mnethostid = {$usertblname}.mnethostid WHERE {$usertblname}.id IS NULL";
-        // Commented the following line to create accounts with empty email address
-        // $sql .= " AND '' <> TRIM(COALESCE({$stagingtblName}.email,''))"; // ignore accounts with empty email addresses
 
-        $selectsql = 'SELECT ';
-        foreach ($colnames as $colname) {
-            if (!in_array($colname, ['firstname', 'preferred_firstname'])) {
-                $selectsql .= " {$stagingtblname}.{$colname}, ";
+        $selectsql = "SELECT {$stagingtblname}.uid AS uid,
+                             {$stagingtblname}.{$attrmap['username']} AS username,
+                             {$stagingtblname}.createtimestamp AS timecreated,
+                             {$stagingtblname}.modifytimestamp AS timemodified";
+        foreach ($this->userfields as $field) {
+            if (array_key_exists($field, $attrmap)) {
+                $selectsql .= ', ';
+                if (!is_array($attrmap[$field])) {
+                    $selectsql .= "{$attrmap[$field]} ";
+                } else {
+                    $selectsqlend = '';
+                    foreach ($attrmap[$field] as $attr) {
+                        $selectsql .= "CASE
+                                        WHEN '' <> TRIM(COALESCE({$stagingtblname}.{$attr}, ''))
+                                        THEN {$stagingtblname}.{$attr}
+                                        ELSE ";
+                        $selectsqlend .= "END ";
+                    }
+                    $selectsql .= "'' $selectsqlend";
+                }
+                $selectsql .= "AS $field ";
             }
         }
-        // special case "first name": use the preferred first name by default, fall back to first name
-        $selectsql .= <<< EOQ
-CASE
-WHEN '' = TRIM(COALESCE({$stagingtblname}.preferred_firstname, '')) THEN {$stagingtblname}.firstname
-ELSE {$stagingtblname}.preferred_firstname
-END AS firstname
-EOQ;
+
         $selectsql .= ' ' . $sql;
         $countsql = "SELECT COUNT(*) AS c " . $sql;
 
@@ -937,7 +926,7 @@ EOQ;
                 $batchend = (int) min($batchstart + count($records), $total);
                 echo '+ Processing records ' . ($batchstart + 1) . " - {$batchend} ... \n";
                 foreach ($records as $record) {
-                    // convert user array to object
+                    // Convert user array to object.
                     $user = new stdClass();
                     foreach ($record as $key => $value) {
                         $user->{$key} = $value;
@@ -945,7 +934,7 @@ EOQ;
                     $user->confirmed = 1;
                     $user->auth = empty($this->config->authtype) ? self::MOODLE_AUTH_ADAPTER : $this->config->authtype;
                     $user->mnethostid = $CFG->mnet_localhost_id;
-                    $user->trackforums = 1;     // #3834: We want to set trackforums to be the default.
+                    $user->trackforums = 1;     // Issue #3834: We want to set trackforums to be the default.
                     if (empty($user->lang)) {
                         $user->lang = $CFG->lang;
                     }
@@ -961,7 +950,7 @@ EOQ;
                     }
                     echo "- Created user '{$user->username}'.\n";
 
-                    // Update tool_ldapsync table
+                    // Update tool_ldapsync table.
                     $select = sprintf("%s = :cn", $DB->sql_compare_text('cn'));
                     if ($rs = $DB->get_record_select('tool_ldapsync', $select, ['cn' => $user->username])) {
                         $rs->createtimestamp = $user->timecreated;
@@ -1028,10 +1017,10 @@ EOQ;
         }
 
         foreach ($userfields as $field) {
-            if (!empty($this->config->{"field_map_$field"})) {
+            if (!empty($field) && !empty($this->config->{"field_map_$field"})) {
                 $moodleattributes[$field] = core_text::strtolower(trim($this->config->{"field_map_$field"}));
                 if (preg_match('/,/', $moodleattributes[$field])) {
-                    $moodleattributes[$field] = explode(',', $moodleattributes[$field]); // split ?
+                    $moodleattributes[$field] = explode(',', $moodleattributes[$field]);
                 }
             }
         }
@@ -1043,7 +1032,7 @@ EOQ;
     /**
      * Test a DN
      *
-     * @param resource $ldapconn
+     * @param \LDAP\Connection $ldapconn
      * @param string $dn The DN to check for existence
      * @param string $message The identifier of a string as in get_string()
      * @param string|object|array $a An object, string or number that can be used

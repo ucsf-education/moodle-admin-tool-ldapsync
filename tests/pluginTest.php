@@ -39,11 +39,19 @@ defined('MOODLE_INTERNAL') || die();
  */
 class Testable_tool_ldapsync_importer_for_plugin extends \tool_ldapsync\importer {
     public function connecttoldap() {
-        return $this->_connectToLdap();
+        return parent::connecttoldap();
     }
 
-    public function getupdatesfromldap($ldap, $ldaptimestamp) {
-        return $this->_getUpdatesFromLdap($ldap, $ldaptimestamp);
+    /**
+     * Searches LDAP for user records that were updated/created after a given datetime.
+     * @param \LDAP\Connection $ldap the LDAP connection
+     * @param string $baseDn the base DN
+     * @param string $ldapTimestamp the datetime
+     * @return array nested array of user records
+     * @throws Exception if search fails
+     */
+    public function getupdatesfromldap($ldap, $ldaptimestamp = null) {
+        return parent::getupdatesfromldap($ldap, $ldaptimestamp);
     }
 }
 
@@ -126,36 +134,37 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         set_config('opt_deref', LDAP_DEREF_NEVER, 'tool_ldapsync');
         set_config('user_attribute', 'eduPersonPrincipalName', 'tool_ldapsync');
         set_config('objectclass', 'ucsfEduPerson', 'tool_ldapsync');
+        set_config('authtype', 'cas', 'tool_ldapsync');
 
         set_config('field_map_email', 'mail', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_email', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_email', '0', 'tool_ldapsync');
-        set_config('field_lock_email', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_email', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_email', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_email', 'unlocked', 'auth_tool_ldapsync');
 
         set_config('field_map_firstname', 'ucsfEduPreferredGivenName,givenName', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_firstname', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_firstname', '0', 'tool_ldapsync');
-        set_config('field_lock_firstname', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_firstname', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_firstname', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_firstname', 'unlocked', 'auth_tool_ldapsync');
 
         set_config('field_map_lastname', 'ucsfEduPreferredLastName,sn', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_lastname', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_lastname', '0', 'tool_ldapsync');
-        set_config('field_lock_lastname', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_lastname', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_lastname', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_lastname', 'unlocked', 'auth_tool_ldapsync');
 
         set_config('field_map_middlename', 'ucsfEduPreferredMiddleName,initials', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_middlename', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_middlename', '0', 'tool_ldapsync');
-        set_config('field_lock_middlename', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_middlename', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_middlename', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_middlename', 'unlocked', 'auth_tool_ldapsync');
 
         set_config('field_map_alternatename', 'displayName', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_alternatename', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_alternatename', '0', 'tool_ldapsync');
-        set_config('field_lock_alternatename', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_alternatename', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_alternatename', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_alternatename', 'unlocked', 'auth_tool_ldapsync');
 
         set_config('field_map_idnumber', 'ucsfEduIDNumber', 'auth_tool_ldapsync');
-        set_config('field_updatelocal_idnumber', 'oncreate', 'tool_ldapsync');
-        set_config('field_updateremote_idnumber', '0', 'tool_ldapsync');
-        set_config('field_lock_idnumber', 'unlocked', 'tool_ldapsync');
+        set_config('field_updatelocal_idnumber', 'oncreate', 'auth_tool_ldapsync');
+        set_config('field_updateremote_idnumber', '0', 'auth_tool_ldapsync');
+        set_config('field_lock_idnumber', 'unlocked', 'auth_tool_ldapsync');
 
         $this->sync = new Testable_tool_ldapsync_importer_for_plugin($gmtts);
 
@@ -176,10 +185,10 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
     /**
      * @group ldaptests
      */
-    public function testconnecttoldap() {
+    public function test_connecttoldap() {
         try {
-            $ldap = $this->sync->connectToLdap();
-            $this->assertEquals('ldap link', get_resource_type($ldap));
+            $ldap = $this->sync->connecttoldap();
+            $this->assertInstanceOf('LDAP\Connection', $ldap);
             ldap_close($ldap);
         } catch (Exception $e) {
             $this->markTestIncomplete($e->getMessage());
@@ -188,10 +197,10 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
     /**
      * @group ldaptests
-     * @depends testConnectToLdap
+     * @depends test_connecttoldap
      */
-    public function testgetupdatesfromldap() {
-        $ldap = $this->sync->connectToLdap();
+    public function test_get_updates_from_ldap() {
+        $ldap = $this->sync->connecttoldap();
 
         // Create a few users
         $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
@@ -201,34 +210,37 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
         // Test with current time + 7 days, expect no update returned
         $ts = date('YmdHis\Z', time() + 7 * 24 * 3600);
-        $result = $this->sync->getUpdatesFromLdap($ldap, $ts);
+        $result = $this->sync->getupdatesfromldap($ldap, $ts);
         $this->assertEmpty($result);
 
         // Test with a fix old date, expect the first few updates are the same.
         $ts = '20100101000000Z';
-        $result = $this->sync->getUpdatesFromLdap($ldap, $ts);
+        $result = $this->sync->getupdatesfromldap($ldap, $ts);
 
         $this->assertGreaterThan(1, count($result));
-        // var_dump( $result );
 
         foreach ($result as $ldapentry) {
-            // $this->assertArrayHasKey( 'uid', $ldapEntry );
+            $this->assertArrayHasKey('uid', $ldapentry);
             $this->assertArrayHasKey('givenname', $ldapentry);
             $this->assertArrayHasKey('sn', $ldapentry);
             $this->assertArrayHasKey('mail', $ldapentry);
             $this->assertArrayHasKey('initials', $ldapentry);
+            $this->assertArrayHasKey('displayname', $ldapentry);
             // UCSF specifics
             $this->assertArrayHasKey('ucsfeduidnumber', $ldapentry);
             $this->assertArrayHasKey('edupersonprincipalname', $ldapentry);
             $this->assertArrayHasKey('ucsfedupreferredgivenname', $ldapentry);
             $this->assertArrayHasKey('ucsfedupreferredlastname', $ldapentry);
             $this->assertArrayHasKey('ucsfedupreferredmiddlename', $ldapentry);
-            $this->assertArrayHasKey('displayname', $ldapentry);
         }
 
         ldap_close($ldap);
     }
 
+    /**
+     * @group ldaptests
+     * @depends test_connecttoldap
+     */
     public function test_tool_ldapsync_importer() {
         global $CFG, $DB;
 
@@ -245,7 +257,6 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
         ob_start();
         $sink = $this->redirectEvents();
-        // $importer = new \tool_ldapsync\importer($ldapConf, $gmtTs);
         $this->sync->run();
         $events = $sink->get_events();
         $sink->close();
@@ -265,14 +276,16 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         // }
 
         // @TODO Should make 'auth' customizable
-        $this->assertEquals(5, $DB->count_records('user', ['auth' => 'shibboleth']));
+        $this->assertEquals(5, $DB->count_records('user', ['auth' => 'cas']));
 
         for ($i = 1; $i <= 5; $i++) {
             $this->assertTrue(
                 $DB->record_exists('user', ['username' => '00000' . $i . '@ucsf.edu',
                                             'email' => 'user' . $i . '@example.com',
-                                            'firstname' => 'Preferredname' . $i,
-                'lastname' => 'Lastname' . $i])
+                                            'firstname' => 'PreferredGivenName' . $i,
+                                            'lastname' => 'PreferredLastName' . $i,
+                                            'middlename' => 'PreferredMiddleName' . $i,
+                                            'alternatename' => 'DisplayName' . $i])
             );
         }
 
@@ -420,7 +433,6 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
 
     protected function create_ldap_user($connection, $topdn, $i) {
         $o = [];
-        // $o['objectClass']   = array('inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount');
         $o['objectClass']   = ['inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount', 'eduPerson', 'ucsfEduPerson'];
         $o['cn']            = 'username' . $i;
         $o['sn']            = 'Lastname' . $i;
@@ -432,13 +444,13 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         $o['mail']          = 'user' . $i . '@example.com';
         $o['userPassword']  = 'pass' . $i;
         $o['initials']      = 'Initials' . $i;
+        $o['displayName']   = 'DisplayName' . $i;
         // UCSF Specifics
         $o['ucsfEduIDNumber'] = '0200000' . $i . '2';
         $o['eduPersonPrincipalName'] = '00000' . $i . '@ucsf.edu';
         $o['ucsfEduPreferredGivenName'] = 'PreferredGivenName' . $i;
         $o['ucsfEduPreferredLastName'] = 'PreferredLastName' . $i;
         $o['ucsfEduPreferredMiddleName'] = 'PreferredMiddleName' . $i;
-        $o['displayName'] = 'DisplayName' . $i;
         $o['eduPersonAffiliation'] = 'member'; // e.g. member, staff, faculty
 
         ldap_add($connection, 'cn=' . $o['cn'] . ',ou=users,' . $topdn, $o);

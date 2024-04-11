@@ -45,8 +45,18 @@ class user_filtering extends \user_filtering {
             case 'timecreated':
                 return new \user_filter_date('timecreated', get_string('createdtime', 'tool_ldapsync'), $advanced, 'timecreated');
             case 'activeonldap':
-                return new user_filter_activeonldap('activeonldap', get_string('activeonldap', 'tool_ldapsync'), $advanced, 'activeonldap');
-            // case 'additionalldapfilter':    return new \user_filter_text('ldapfilter', get_string('additionalldapfilter', 'tool_ldapsync'), $advanced, 'ldapfilter');
+                return new user_filter_activeonldap(
+                    'activeonldap',
+                    get_string('activeonldap', 'tool_ldapsync'),
+                    $advanced,
+                    'activeonldap'
+                );
+            /* Not use for now.
+            case 'additionalldapfilter':
+                return new \user_filter_text('ldapfilter',
+                                             get_string('additionalldapfilter', 'tool_ldapsync'),
+                                             $advanced, 'ldapfilter');
+            */
             default:
                 return parent::get_field($fieldname, $advanced);
         }
@@ -60,8 +70,6 @@ class user_filtering extends \user_filtering {
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class user_filter_activeonldap extends \user_filter_yesno {
-    private $_ldapuserlist = null;
-
     /**
      * Returns the condition to be used with SQL
      *

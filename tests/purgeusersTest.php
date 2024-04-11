@@ -38,8 +38,9 @@ defined('MOODLE_INTERNAL') || die();
  * Testable object for the importer
  */
 class Testable_tool_ldapsync_importer_for_purgeusers extends \tool_ldapsync\importer {
-    public function getupdatesfromldap($ldap, $ldaptimestamp) {
-        return $this->_getUpdatesFromLdap($ldap, $ldaptimestamp);
+    public function getupdatesfromldap($ldap, $ldaptimestamp = null) {
+        // Change visibility to allow tests to call protected function.
+        return parent::getupdatesfromldap($ldap, $ldaptimestamp);
     }
 }
 /**
@@ -58,7 +59,10 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
             $this->markTestSkipped('LDAP extension is not loaded.');
         }
 
-        if (!defined('TEST_TOOL_LDAPSYNC_HOST_URL') || !defined('TEST_TOOL_LDAPSYNC_BIND_DN') || !defined('TEST_TOOL_LDAPSYNC_BIND_PW') || !defined('TEST_TOOL_LDAPSYNC_DOMAIN')) {
+        if (
+            !defined('TEST_TOOL_LDAPSYNC_HOST_URL') || !defined('TEST_TOOL_LDAPSYNC_BIND_DN')
+            || !defined('TEST_TOOL_LDAPSYNC_BIND_PW') || !defined('TEST_TOOL_LDAPSYNC_DOMAIN')
+        ) {
             $this->markTestSkipped('External LDAP test server not configured.');
         }
 
@@ -114,7 +118,6 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         set_config('user_type', 'rfc2307', 'tool_ldapsync');
         set_config('contexts', 'ou=users,' . $topdn, 'tool_ldapsync');
         set_config('opt_deref', LDAP_DEREF_NEVER, 'tool_ldapsync');
-        // set_config('user_attribute', 'eduPersonPrincipalName', 'tool_ldapsync');
         set_config('user_attribute', 'edupersonprincipalname', 'tool_ldapsync');
         set_config('objectclass', 'ucsfEduPerson', 'tool_ldapsync');
 
@@ -150,8 +153,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
             $this->ldapConn = null;
         }
 
-        // Use ob_end_flush if you want to see the output
-        // ob_end_flush();
+        // Use ob_end_flush() if you want to see the output.
         ob_end_clean();
     }
 
@@ -164,9 +166,9 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         } catch (Exception $e) {
             $this->markTestIncomplete($e->getMessage());
         }
-        $this->assertEquals('ldap link', get_resource_type($ldap));
+        $this->assertInstanceOf('LDAP\Connection', $ldap);
 
-        // Create a few users
+        // Create a few users.
         $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
         for ($i = 1; $i <= 5; $i++) {
             $this->create_ldap_user($this->ldapConn, $topdn, $i);
@@ -190,7 +192,6 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         $user = new stdClass();
         $user->modified = time();
         $user->confirmed = 1;
-        // $user->auth = empty($this->config->authtype) ? self::MOODLE_AUTH_ADAPTER : $this->config->authtype;
         $user->auth = 'shibboleth';
         $user->mnethostid = $CFG->mnet_localhost_id;
         $user->username = 'testuser';
@@ -209,7 +210,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
 
         $this->assertEquals(1, $userslist[$id]->deleted);
 
-        // Create user with last login
+        // Create user with last login.
         unset($user->id);
         $user->lastlogin = time();
 
@@ -234,12 +235,10 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
 
         require_once($CFG->dirroot . '/user/lib.php');
-        // require_once($CFG->dirroot.'/lib/enrollib.php');
 
         $user = new stdClass();
         $user->modified = time();
         $user->confirmed = 1;
-        // $user->auth = empty($this->config->authtype) ? self::MOODLE_AUTH_ADAPTER : $this->config->authtype;
         $user->auth = 'shibboleth';
         $user->mnethostid = $CFG->mnet_localhost_id;
         $user->username = 'testuser';
@@ -277,7 +276,9 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
 
     protected function create_ldap_user($connection, $topdn, $i) {
         $o = [];
-        // $o['objectClass']   = array('inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount');
+        // Base object class.
+        $o['objectClass']   = ['inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount'];
+        // Append UCSF specifics.
         $o['objectClass']   = ['inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount', 'eduPerson', 'ucsfEduPerson'];
         $o['cn']            = 'username' . $i;
         $o['sn']            = 'Lastname' . $i;
@@ -288,11 +289,11 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         $o['homeDirectory'] = '/';
         $o['mail']          = 'user' . $i . '@example.com';
         $o['userPassword']  = 'pass' . $i;
-        // UCSF Specifics
+        // UCSF Specifics.
         $o['ucsfEduIDNumber'] = '0200000' . $i . '2';
         $o['eduPersonPrincipalName'] = '00000' . $i . '@ucsf.edu';
         $o['ucsfEduPreferredGivenName'] = 'Preferredname' . $i;
-        $o['eduPersonAffiliation'] = 'member'; // e.g. member, staff, faculty
+        $o['eduPersonAffiliation'] = 'member'; // E.g. member, staff, faculty.
 
         ldap_add($connection, 'cn=' . $o['cn'] . ',ou=users,' . $topdn, $o);
     }
