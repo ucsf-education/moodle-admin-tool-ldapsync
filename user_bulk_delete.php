@@ -13,8 +13,10 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * script for bulk user delete operations
+ * @package tool_ldapsync
  */
 
 require_once('../../../config.php');

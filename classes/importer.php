@@ -67,7 +67,7 @@ class importer {
 
     /**
      * Moodle custom fields to sync with.
-     * @var array()
+     * @var array
      */
     private $customfields = null;
 
@@ -83,7 +83,7 @@ class importer {
     protected $ldapdt = '';
 
     /**
-     * @var integer $_ts UNIX timestamp
+     * @var int $_ts UNIX timestamp
      */
     protected $ts = 0;
 
