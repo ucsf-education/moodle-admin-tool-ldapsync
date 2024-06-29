@@ -38,6 +38,11 @@ defined('MOODLE_INTERNAL') || die();
  * Testable object for the importer
  */
 class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
+    /**
+     * Override function visibility for testing
+     * @var array $data
+     * @return void
+     */
     public function updatemoodleaccounts(array $data) {
         // Change visibility to allow tests to call protected function.
         return parent::updatemoodleaccounts($data);
@@ -47,8 +52,12 @@ class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
  * Test case for ldapsync importer
  */
 class tool_ldapsync_importer_testcase extends advanced_testcase {
+    /** @var \tool_ldapsync\importer This variable holds an instance of importer */
     private $sync = null;
 
+    /**
+     * Set up test case
+     */
     protected function setUp(): void {
         // Create new empty test container.
         $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
@@ -103,13 +112,20 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
         ob_start();
     }
 
+    /**
+     * Tear down test case
+     */
     protected function tearDown(): void {
         // Use ob_end_flush() to see output.
         ob_end_clean();
     }
 
     /**
-     * @dataProvider ldapsync_data_provider
+     * Test adding new users
+     *
+     * @dataProvider    ldapsync_data_provider
+     * @param array     $ldapuser An array of ldapusers
+     * @param array     $expected An array of expected results
      */
     public function test_adding_new_users(array $ldapuser, array $expected) {
         global $DB;
@@ -192,7 +208,9 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
             $this->assertEquals($user['edupersonprincipalname'], $record->username);
         }
     }
-
+    /**
+     * Test skipping user with empty edupersonprincipalname (EPPN).
+     */
     public function test_user_with_empty_eppn_should_be_skipped() {
         global $DB;
         $this->resetAfterTest(true);
@@ -247,6 +265,10 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
         $this->assertEquals($expectedfinalcount, $finalcount);
     }
 
+    /**
+     * Test that if the input does not contain any importable user, it
+     * will not produce an error.
+     */
     public function test_skipping_all_users_will_not_generate_error() {
         global $DB;
         $this->resetAfterTest(true);
@@ -309,6 +331,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
      *      [LDAP data set],
      *      [Expected Moodle field to match] => [Expected LDAP field to match] ]
      * ]
+     * @return array[]
      */
     public function ldapsync_data_provider() {
         return [

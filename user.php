@@ -14,6 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Moodle Form for purgeusers action
+ * @package     tool_ldapsync
+ * @copyright   Copyright (c) 2024, UCSF Education IT
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
     require_once('../../../config.php');
     require_once($CFG->libdir . '/adminlib.php');
     require_once($CFG->libdir . '/authlib.php');
@@ -28,6 +35,9 @@
  * @package tool_ldapsync
  */
 class ldapsync_purgeusers_action_form extends moodleform {
+    /**
+     * Function definition for moodleform.
+     */
     private function definition() {
         global $CFG;
 

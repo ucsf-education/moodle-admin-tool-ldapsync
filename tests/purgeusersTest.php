@@ -34,10 +34,17 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+namespace tool_ldapsync
+
 /**
  * Testable object for the importer
  */
 class Testable_tool_ldapsync_importer_for_purgeusers extends \tool_ldapsync\importer {
+    /**
+     * Get updates from LDAP
+     * @param connection $ldap
+     * @param string $ldaptimestamp
+     */
     public function getupdatesfromldap($ldap, $ldaptimestamp = null) {
         // Change visibility to allow tests to call protected function.
         return parent::getupdatesfromldap($ldap, $ldaptimestamp);
@@ -47,9 +54,14 @@ class Testable_tool_ldapsync_importer_for_purgeusers extends \tool_ldapsync\impo
  * Test case for purgeusers
  */
 class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
+    /** @var importer $sync */
     private $sync = null;
+    /** @var connection $ldapconn  */
     private $ldapconn = null;
 
+    /**
+     * Set up test case
+     */
     protected function setUp(): void {
         global $CFG;
 
@@ -146,6 +158,9 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         ob_start();
     }
 
+    /**
+     * Tear down test case
+     */
     protected function tearDown(): void {
         if (!$this->ldapConn) {
             $this->recursive_delete($this->ldapConn, TEST_TOOL_LDAPSYNC_DOMAIN, 'dc=moodletest');
@@ -158,7 +173,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
     }
 
     /**
-     * @group ldaptests
+     * Test create_ldap_user function
      */
     public function testcheckifusersinldap() {
         try {
@@ -182,7 +197,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
 
 
     /**
-     * @group ldaptests
+     * Set the delete flag for users that have never logged in.
      */
     public function testsetdeletedflagforneverloginusers() {
         global $CFG;
@@ -228,7 +243,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
 
 
     /**
-     * @group ldaptests
+     * Test user is enrolled in a course.
      */
     public function testisuserenrolledinanycourse() {
         global $CFG, $DB;
@@ -274,6 +289,9 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         $this->assertFalse(empty(enrol_get_users_courses($user->id)));
     }
 
+    /**
+     * Create user on LDAP
+     */
     protected function create_ldap_user($connection, $topdn, $i) {
         $o = [];
         // Base object class.
@@ -298,10 +316,16 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
         ldap_add($connection, 'cn=' . $o['cn'] . ',ou=users,' . $topdn, $o);
     }
 
+    /**
+     * Delete user from LDAP
+     */
     protected function delete_ldap_user($connection, $topdn, $i) {
         ldap_delete($connection, 'cn=username' . $i . ',ou=users,' . $topdn);
     }
 
+    /**
+     * Delete recursively
+     */
     protected function recursive_delete($connection, $dn, $filter) {
         if ($res = ldap_list($connection, $dn, $filter, ['dn'])) {
             $info = ldap_get_entries($connection, $res);

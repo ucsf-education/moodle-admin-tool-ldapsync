@@ -17,6 +17,8 @@
 /**
  * script for bulk user delete operations
  * @package tool_ldapsync
+ * @copyright  Copyright (c) 2024, UCSF Education IT
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once('../../../config.php');
