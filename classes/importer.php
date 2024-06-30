@@ -36,9 +36,11 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/ldaplib.php');
 
+use \AllowDynamicProperties;
 /**
  * Class containing methods to import ldap data.
  */
+#[AllowDynamicProperties]
 class importer {
     /**
      * @var string MOODLE_TEMP_TABLE name of the temporary DB table in moodle needed for the sync. process
