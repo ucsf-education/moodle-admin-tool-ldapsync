@@ -59,6 +59,9 @@ class importer_test extends advanced_testcase {
      * Set up test case
      */
     protected function setUp(): void {
+
+        parent::setUp();
+
         // Create new empty test container.
         // $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
 
@@ -118,6 +121,7 @@ class importer_test extends advanced_testcase {
     protected function tearDown(): void {
         // Use ob_end_flush() to see output.
         ob_end_clean();
+        parent::tearDown();
     }
 
     /**
