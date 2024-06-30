@@ -63,6 +63,8 @@ class purgeusers_test extends advanced_testcase {
     protected function setUp(): void {
         global $CFG;
 
+        parent::setUp();
+
         $this->resetAfterTest();
 
         if (!extension_loaded('ldap')) {
@@ -168,6 +170,7 @@ class purgeusers_test extends advanced_testcase {
 
         // Use ob_end_flush() if you want to see the output.
         ob_end_clean();
+        parent::tearDown();
     }
 
     /**

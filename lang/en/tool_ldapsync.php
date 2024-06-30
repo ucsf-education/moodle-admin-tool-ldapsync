@@ -23,14 +23,13 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['activeonldap'] = 'Active on LDAP server';
 $string['additionalldapfilter'] = 'Additional LDAP filter';
 $string['authtype'] = 'Auth type';
 $string['authtype_description'] = 'Select the authentication type for the imported accounts.';
 $string['configuretask'] = 'Configure scheduled task';
 $string['createdtime'] = 'Created time';
-$string['activeonldap'] = 'Active on LDAP server';
 $string['importtask'] = 'Import LDAP users';
-$string['updatetask'] = 'Update LDAP users';
 $string['ldap_noextension'] = '<em>The PHP LDAP module does not seem to be present. Please ensure it is installed and enabled if you want to use this LDAP Sync plugin.</em>';
 $string['ldapsync_description'] = 'This method imports user accounts from an external LDAP server.
                                   If the given username and password are valid, Moodle creates a new user
@@ -41,3 +40,4 @@ $string['opt_deref_key'] = 'Dereference aliases';
 $string['pluginname'] = 'Import users from LDAP';
 $string['privacy:metadata'] = 'This plugin import user data from LDAP.';
 $string['purgeusers'] = 'Review/Purge user accounts';
+$string['updatetask'] = 'Update LDAP users';

@@ -73,6 +73,7 @@ class plugin_test extends advanced_testcase {
     protected function setUp(): void {
         global $CFG;
 
+        parent::setUp();
         $this->resetAfterTest();
 
         if (!extension_loaded('ldap')) {
@@ -191,6 +192,7 @@ class plugin_test extends advanced_testcase {
 
         // Use ob_end_flush() to flush to standard output.
         ob_end_clean();
+        parent::tearDown();
     }
 
     /**
