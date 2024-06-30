@@ -74,7 +74,7 @@ class importer_test extends advanced_testcase {
         // set_config('bind_dn', TEST_TOOL_LDAPSYNC_BIND_DN, 'tool_ldapsync');
         // set_config('bind_pw', TEST_TOOL_LDAPSYNC_BIND_PW, 'tool_ldapsync');
         set_config('user_type', 'rfc2307', 'tool_ldapsync');
-        set_config('contexts', 'ou=users,' . $topdn, 'tool_ldapsync');
+        // set_config('contexts', 'ou=users,' . $topdn, 'tool_ldapsync');
         set_config('opt_deref', LDAP_DEREF_NEVER, 'tool_ldapsync');
         set_config('user_attribute', 'eduPersonPrincipalName', 'tool_ldapsync');
         set_config('objectclass', 'ucsfEduPerson', 'tool_ldapsync');
