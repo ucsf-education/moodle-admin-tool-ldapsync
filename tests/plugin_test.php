@@ -61,8 +61,10 @@ class Testable_tool_ldapsync_importer_for_plugin extends \tool_ldapsync\importer
 /**
  * Test case for ldapsync plugin
  */
-class tool_ldapsync_plugin_testcase extends advanced_testcase {
+class plugin_test extends advanced_testcase {
+    /** @var \tool_ldapsync\importer $sync */
     private $sync = null;
+    /** @var \LDAP\Connection $ldapconn */
     private $ldapconn = null;
 
     /**

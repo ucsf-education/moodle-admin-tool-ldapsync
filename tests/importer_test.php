@@ -51,7 +51,7 @@ class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
 /**
  * Test case for ldapsync importer
  */
-class tool_ldapsync_importer_testcase extends advanced_testcase {
+class importer_test extends advanced_testcase {
     /** @var \tool_ldapsync\importer This variable holds an instance of importer */
     private $sync = null;
 
@@ -325,15 +325,16 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
 
     /**
      * Test data set
-     *
+     * Data provider for {@see self::test_adding_new_users()}.
      * The format for these data is:
      * [ 'Test case description' => [
      *      [LDAP data set],
      *      [Expected Moodle field to match] => [Expected LDAP field to match] ]
      * ]
-     * @return array[]
+     *
+     * @return array List of data sets - (string) Test case description => (array) data
      */
-    public function ldapsync_data_provider() {
+    public static function ldapsync_data_provider(): array {
         return [
             'Simple case' => [
                 [

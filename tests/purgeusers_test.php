@@ -34,8 +34,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-namespace tool_ldapsync
-
 /**
  * Testable object for the importer
  */
@@ -53,10 +51,10 @@ class Testable_tool_ldapsync_importer_for_purgeusers extends \tool_ldapsync\impo
 /**
  * Test case for purgeusers
  */
-class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
-    /** @var importer $sync */
+class purgeusers_test extends advanced_testcase {
+    /** @var \tool_ldapsync\importer $sync */
     private $sync = null;
-    /** @var connection $ldapconn  */
+    /** @var \LDAP\Connection $ldapconn  */
     private $ldapconn = null;
 
     /**
@@ -175,7 +173,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
     /**
      * Test create_ldap_user function
      */
-    public function testcheckifusersinldap() {
+    public function test_checkifusersinldap() {
         try {
             $ldap = $this->sync->ldap_connect();
         } catch (Exception $e) {
@@ -199,7 +197,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
     /**
      * Set the delete flag for users that have never logged in.
      */
-    public function testsetdeletedflagforneverloginusers() {
+    public function test_setdeletedflagforneverloginusers() {
         global $CFG;
 
         require_once($CFG->dirroot . '/user/lib.php');
@@ -245,7 +243,7 @@ class tool_ldapsync_purgeusers_testcase extends advanced_testcase {
     /**
      * Test user is enrolled in a course.
      */
-    public function testisuserenrolledinanycourse() {
+    public function test_isuserenrolledinanycourse() {
         global $CFG, $DB;
         $this->resetAfterTest(true);
 
