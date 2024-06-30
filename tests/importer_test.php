@@ -167,6 +167,7 @@ class importer_test extends advanced_testcase {
                     "mail" => "Jane.Doe@example.com",
                     "ucsfeduidnumber" => "011234569",
                     "edupersonprincipalname" => "123456@example.com",
+                    "ucsfedupreferredgivenname" => "",
                     ],
                 ];
 
