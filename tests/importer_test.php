@@ -60,16 +60,16 @@ class importer_test extends advanced_testcase {
      */
     protected function setUp(): void {
         // Create new empty test container.
-        $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
+        // $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
 
         $gmtts = strtotime('2000-01-01 00:00:00');
 
         // Configure the plugin a bit.
-        set_config('host_url', TEST_TOOL_LDAPSYNC_HOST_URL, 'tool_ldapsync');
+        // set_config('host_url', TEST_TOOL_LDAPSYNC_HOST_URL, 'tool_ldapsync');
         set_config('start_tls', 0, 'tool_ldapsync');
         set_config('ldap_version', 3, 'tool_ldapsync');
-        set_config('bind_dn', TEST_TOOL_LDAPSYNC_BIND_DN, 'tool_ldapsync');
-        set_config('bind_pw', TEST_TOOL_LDAPSYNC_BIND_PW, 'tool_ldapsync');
+        // set_config('bind_dn', TEST_TOOL_LDAPSYNC_BIND_DN, 'tool_ldapsync');
+        // set_config('bind_pw', TEST_TOOL_LDAPSYNC_BIND_PW, 'tool_ldapsync');
         set_config('user_type', 'rfc2307', 'tool_ldapsync');
         set_config('contexts', 'ou=users,' . $topdn, 'tool_ldapsync');
         set_config('opt_deref', LDAP_DEREF_NEVER, 'tool_ldapsync');
