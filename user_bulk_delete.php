@@ -13,8 +13,12 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * script for bulk user delete operations
+ * @package tool_ldapsync
+ * @copyright  Copyright (c) 2024, UCSF Education IT
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once('../../../config.php');

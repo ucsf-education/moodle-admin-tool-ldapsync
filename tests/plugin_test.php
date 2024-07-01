@@ -38,6 +38,9 @@ defined('MOODLE_INTERNAL') || die();
  * Testable object for the importer
  */
 class Testable_tool_ldapsync_importer_for_plugin extends \tool_ldapsync\importer {
+    /**
+     * Change the visibility scope of the protected function to public
+     */
     public function connecttoldap() {
         return parent::connecttoldap();
     }
@@ -45,8 +48,7 @@ class Testable_tool_ldapsync_importer_for_plugin extends \tool_ldapsync\importer
     /**
      * Searches LDAP for user records that were updated/created after a given datetime.
      * @param \LDAP\Connection $ldap the LDAP connection
-     * @param string $baseDn the base DN
-     * @param string $ldapTimestamp the datetime
+     * @param string|null $ldaptimestamp the datetime
      * @return array nested array of user records
      * @throws Exception if search fails
      */
@@ -58,13 +60,19 @@ class Testable_tool_ldapsync_importer_for_plugin extends \tool_ldapsync\importer
 /**
  * Test case for ldapsync plugin
  */
-class tool_ldapsync_plugin_testcase extends advanced_testcase {
+class plugin_test extends advanced_testcase {
+    /** @var \tool_ldapsync\importer $sync */
     private $sync = null;
+    /** @var \LDAP\Connection $ldapconn */
     private $ldapconn = null;
 
+    /**
+     * Set up test case
+     */
     protected function setUp(): void {
         global $CFG;
 
+        parent::setUp();
         $this->resetAfterTest();
 
         if (!extension_loaded('ldap')) {
@@ -171,6 +179,9 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         ob_start();
     }
 
+    /**
+     * Tear down test case
+     */
     protected function tearDown(): void {
         if (!$this->ldapConn) {
             $this->recursive_delete($this->ldapConn, TEST_TOOL_LDAPSYNC_DOMAIN, 'dc=moodletest');
@@ -178,11 +189,14 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
             $this->ldapConn = null;
         }
 
+        // Use ob_end_flush() to flush to standard output.
         ob_end_clean();
-        // ob_end_flush();
+        parent::tearDown();
     }
 
     /**
+     * test_connecttoldap
+     *
      * @group ldaptests
      */
     public function test_connecttoldap() {
@@ -196,6 +210,8 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
     }
 
     /**
+     * test_get_updates_from_ldap
+     *
      * @group ldaptests
      * @depends test_connecttoldap
      */
@@ -238,6 +254,8 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
     }
 
     /**
+     * test_tool_ldapsync_importer
+     *
      * @group ldaptests
      * @depends test_connecttoldap
      */
@@ -431,6 +449,13 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         // ldap_close($connection);
     }
 
+    /**
+     * Create user on LDAP
+     *
+     * @param \LDAP\Connection $connection
+     * @param string $topdn
+     * @param string $i
+     */
     protected function create_ldap_user($connection, $topdn, $i) {
         $o = [];
         $o['objectClass']   = ['inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount', 'eduPerson', 'ucsfEduPerson'];
@@ -456,10 +481,23 @@ class tool_ldapsync_plugin_testcase extends advanced_testcase {
         ldap_add($connection, 'cn=' . $o['cn'] . ',ou=users,' . $topdn, $o);
     }
 
+    /**
+     * Delete LDAP user
+     *
+     * @param \LDAP\Connection $connection
+     * @param string $topdn
+     * @param string $i attributes
+     */
     protected function delete_ldap_user($connection, $topdn, $i) {
         ldap_delete($connection, 'cn=username' . $i . ',ou=users,' . $topdn);
     }
 
+    /**
+     * Delete recursively
+     * @param \LDAP\Connection $connection
+     * @param string $dn base
+     * @param string $filter
+     */
     protected function recursive_delete($connection, $dn, $filter) {
         if ($res = ldap_list($connection, $dn, $filter, ['dn'])) {
             $info = ldap_get_entries($connection, $res);

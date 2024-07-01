@@ -38,6 +38,11 @@ defined('MOODLE_INTERNAL') || die();
  * Testable object for the importer
  */
 class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
+    /**
+     * Override function visibility for testing
+     * @param array $data
+     * @return void
+     */
     public function updatemoodleaccounts(array $data) {
         // Change visibility to allow tests to call protected function.
         return parent::updatemoodleaccounts($data);
@@ -46,23 +51,30 @@ class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
 /**
  * Test case for ldapsync importer
  */
-class tool_ldapsync_importer_testcase extends advanced_testcase {
+class importer_test extends advanced_testcase {
+    /** @var \tool_ldapsync\importer This variable holds an instance of importer */
     private $sync = null;
 
+    /**
+     * Set up test case
+     */
     protected function setUp(): void {
+
+        parent::setUp();
+
         // Create new empty test container.
-        $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
+        // $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
 
         $gmtts = strtotime('2000-01-01 00:00:00');
 
         // Configure the plugin a bit.
-        set_config('host_url', TEST_TOOL_LDAPSYNC_HOST_URL, 'tool_ldapsync');
+        // set_config('host_url', TEST_TOOL_LDAPSYNC_HOST_URL, 'tool_ldapsync');
         set_config('start_tls', 0, 'tool_ldapsync');
         set_config('ldap_version', 3, 'tool_ldapsync');
-        set_config('bind_dn', TEST_TOOL_LDAPSYNC_BIND_DN, 'tool_ldapsync');
-        set_config('bind_pw', TEST_TOOL_LDAPSYNC_BIND_PW, 'tool_ldapsync');
+        // set_config('bind_dn', TEST_TOOL_LDAPSYNC_BIND_DN, 'tool_ldapsync');
+        // set_config('bind_pw', TEST_TOOL_LDAPSYNC_BIND_PW, 'tool_ldapsync');
         set_config('user_type', 'rfc2307', 'tool_ldapsync');
-        set_config('contexts', 'ou=users,' . $topdn, 'tool_ldapsync');
+        // set_config('contexts', 'ou=users,' . $topdn, 'tool_ldapsync');
         set_config('opt_deref', LDAP_DEREF_NEVER, 'tool_ldapsync');
         set_config('user_attribute', 'eduPersonPrincipalName', 'tool_ldapsync');
         set_config('objectclass', 'ucsfEduPerson', 'tool_ldapsync');
@@ -103,13 +115,21 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
         ob_start();
     }
 
+    /**
+     * Tear down test case
+     */
     protected function tearDown(): void {
         // Use ob_end_flush() to see output.
         ob_end_clean();
+        parent::tearDown();
     }
 
     /**
-     * @dataProvider ldapsync_data_provider
+     * Test adding new users
+     *
+     * @dataProvider    ldapsync_data_provider
+     * @param array     $ldapuser An array of ldapusers
+     * @param array     $expected An array of expected results
      */
     public function test_adding_new_users(array $ldapuser, array $expected) {
         global $DB;
@@ -147,6 +167,7 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
                     "mail" => "Jane.Doe@example.com",
                     "ucsfeduidnumber" => "011234569",
                     "edupersonprincipalname" => "123456@example.com",
+                    "ucsfedupreferredgivenname" => "",
                     ],
                 ];
 
@@ -192,7 +213,9 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
             $this->assertEquals($user['edupersonprincipalname'], $record->username);
         }
     }
-
+    /**
+     * Test skipping user with empty edupersonprincipalname (EPPN).
+     */
     public function test_user_with_empty_eppn_should_be_skipped() {
         global $DB;
         $this->resetAfterTest(true);
@@ -247,6 +270,10 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
         $this->assertEquals($expectedfinalcount, $finalcount);
     }
 
+    /**
+     * Test that if the input does not contain any importable user, it
+     * will not produce an error.
+     */
     public function test_skipping_all_users_will_not_generate_error() {
         global $DB;
         $this->resetAfterTest(true);
@@ -303,14 +330,16 @@ class tool_ldapsync_importer_testcase extends advanced_testcase {
 
     /**
      * Test data set
-     *
+     * Data provider for {@see self::test_adding_new_users()}.
      * The format for these data is:
      * [ 'Test case description' => [
      *      [LDAP data set],
      *      [Expected Moodle field to match] => [Expected LDAP field to match] ]
      * ]
+     *
+     * @return array List of data sets - (string) Test case description => (array) data
      */
-    public function ldapsync_data_provider() {
+    public static function ldapsync_data_provider(): array {
         return [
             'Simple case' => [
                 [

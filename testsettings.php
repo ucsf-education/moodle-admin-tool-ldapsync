@@ -14,6 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * testsettings.php
+ *
+ * @package     tool_ldapsync
+ * @author      Carson Tam <carson.tam@ucsf.edu>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   Copyright (c) 2024, UCSF Education IT
+ *
+ */
+
 require_once('../../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 

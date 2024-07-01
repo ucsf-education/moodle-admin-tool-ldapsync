@@ -15,6 +15,14 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Upgrade tool_ldapsync Functions
+ *
+ * @package     tool_ldapsync
+ * @copyright   Copyright (c) 2024, UCSF Education IT
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
  * Function to upgrade tool_ldapsync.
  *
  * @package tool_ldapsync

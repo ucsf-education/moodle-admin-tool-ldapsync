@@ -17,9 +17,10 @@
 /**
  * importer.php
  *
- * @package tool_ldapsync
- * @author Carson Tam <carson.tam@ucsf.edu>
- * @copyright Copyright (c) 2024, UCSF Center for Knowledge Management
+ * @package     tool_ldapsync
+ * @author      Carson Tam <carson.tam@ucsf.edu>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   Copyright (c) 2024, UCSF Education IT
  *
  * Run this script on a daily basis via cron job to synchronize user data between a given LDAP server
  * and the moodle database.
@@ -38,6 +39,7 @@ require_once($CFG->libdir . '/ldaplib.php');
 /**
  * Class containing methods to import ldap data.
  */
+#[\AllowDynamicProperties]
 class importer {
     /**
      * @var string MOODLE_TEMP_TABLE name of the temporary DB table in moodle needed for the sync. process
@@ -67,7 +69,7 @@ class importer {
 
     /**
      * Moodle custom fields to sync with.
-     * @var array()
+     * @var array
      */
     private $customfields = null;
 
@@ -83,11 +85,12 @@ class importer {
     protected $ldapdt = '';
 
     /**
-     * @var integer $_ts UNIX timestamp
+     * @var int $_ts UNIX timestamp
      */
     protected $ts = 0;
 
     /**
+     * Constructor for Importer
      * @param integer $ts
      */
     public function __construct($ts = null) {
@@ -204,7 +207,8 @@ class importer {
 
     /**
      * Delete never login account
-     * @param string $userid
+     * @param object $user
+     * @return bool
      */
     public function delete_never_login($user) {
         global $DB;
@@ -371,7 +375,7 @@ class importer {
      * Returns all usernames from LDAP
      * (copy from auth/ldap/auth.php)
      *
-     * @param $filter An LDAP search filter to select desired users
+     * @param string $filter An LDAP search filter to select desired users
      * @return array of LDAP user names converted to UTF-8
      */
     private function ldap_get_userlist($filter = '*') {
@@ -535,10 +539,11 @@ class importer {
 
     /**
      * Searches LDAP for user records that were updated/created after a given datetime.
+     *
      * @param \LDAP\Connection $ldap the LDAP connection
-     * @param string $baseDn the base DN
-     * @param string $ldapTimestamp the datetime
+     * @param string|null $ldaptimestamp (optional) the datetime
      * @return array nested array of user records
+     *
      * @throws Exception if search fails
      */
     protected function getupdatesfromldap($ldap, $ldaptimestamp = null) {
@@ -671,8 +676,8 @@ class importer {
     /**
      * Adds/Merges LDAP user accounts into Moodle's database.
      * Most of this has been shamelessly ripped off Moodle's default LDAP auth adapter.
+     *
      * @param array $data nested array of updated user records
-     * @global $CFG Moodle's global config object
      * @see auth_plugin_ldap::sync_users()
      * @throws Exception on database/SQL related failures
      */
@@ -1005,7 +1010,6 @@ EOL;
      *
      * @return array
      */
-
     public function ldap_attributes() {
         $moodleattributes = [];
         // If we have custom fields then merge them with user fields.
