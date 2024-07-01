@@ -207,7 +207,8 @@ class importer {
 
     /**
      * Delete never login account
-     * @param string $userid
+     * @param object $user
+     * @return bool
      */
     public function delete_never_login($user) {
         global $DB;
@@ -374,7 +375,7 @@ class importer {
      * Returns all usernames from LDAP
      * (copy from auth/ldap/auth.php)
      *
-     * @param $filter An LDAP search filter to select desired users
+     * @param string $filter An LDAP search filter to select desired users
      * @return array of LDAP user names converted to UTF-8
      */
     private function ldap_get_userlist($filter = '*') {
@@ -538,10 +539,11 @@ class importer {
 
     /**
      * Searches LDAP for user records that were updated/created after a given datetime.
+     *
      * @param \LDAP\Connection $ldap the LDAP connection
-     * @param string $baseDn the base DN
-     * @param string $ldapTimestamp the datetime
+     * @param string|null $ldaptimestamp (optional) the datetime
      * @return array nested array of user records
+     *
      * @throws Exception if search fails
      */
     protected function getupdatesfromldap($ldap, $ldaptimestamp = null) {

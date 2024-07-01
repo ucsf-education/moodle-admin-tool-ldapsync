@@ -292,6 +292,9 @@ class purgeusers_test extends advanced_testcase {
 
     /**
      * Create user on LDAP
+     * @param \LDAP\Connection $connection
+     * @param string $topdn
+     * @param string $i
      */
     protected function create_ldap_user($connection, $topdn, $i) {
         $o = [];
@@ -319,6 +322,9 @@ class purgeusers_test extends advanced_testcase {
 
     /**
      * Delete user from LDAP
+     * @param \LDAP\Connection $connection An LDAP\Connection instance, returned by ldap_connect().
+     * @param string $topdn The top level distinguished name of an LDAP entity.
+     * @param string $i
      */
     protected function delete_ldap_user($connection, $topdn, $i) {
         ldap_delete($connection, 'cn=username' . $i . ',ou=users,' . $topdn);
@@ -326,6 +332,9 @@ class purgeusers_test extends advanced_testcase {
 
     /**
      * Delete recursively
+     * @param \LDAP\Connection $connection An LDAP\Connection instance, returned by ldap_connect().
+     * @param string $dn The distinguished name of an LDAP entity.
+     * @param string $filter A filter for LDAP entity.
      */
     protected function recursive_delete($connection, $dn, $filter) {
         if ($res = ldap_list($connection, $dn, $filter, ['dn'])) {

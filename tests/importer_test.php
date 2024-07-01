@@ -40,7 +40,7 @@ defined('MOODLE_INTERNAL') || die();
 class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
     /**
      * Override function visibility for testing
-     * @var array $data
+     * @param array $data
      * @return void
      */
     public function updatemoodleaccounts(array $data) {
