@@ -25,8 +25,8 @@
 
 $string['activeonldap'] = 'Active on LDAP server';
 $string['additionalldapfilter'] = 'Additional LDAP filter';
-$string['authtype'] = 'Auth type';
-$string['authtype_description'] = 'Select the authentication type for the imported accounts.';
+$string['authtype'] = 'Select the authentication type for the imported accounts.';
+$string['authtype_key'] = 'Auth type';
 $string['configuretask'] = 'Configure scheduled task';
 $string['createdtime'] = 'Created time';
 $string['importtask'] = 'Import LDAP users';

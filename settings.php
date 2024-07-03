@@ -62,8 +62,8 @@ if ($hassiteconfig) {
 
             $settings->add(new admin_setting_configselect(
                 'tool_ldapsync/authtype',
+                new lang_string('authtype_key', 'tool_ldapsync'),
                 new lang_string('authtype', 'tool_ldapsync'),
-                new lang_string('authtype_description', 'tool_ldapsync'),
                 \tool_ldapsync\importer::MOODLE_AUTH_ADAPTER,
                 $enabledauth
             ));
