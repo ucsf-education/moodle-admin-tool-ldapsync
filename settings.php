@@ -64,7 +64,8 @@ if ($hassiteconfig) {
                 'tool_ldapsync/authtype',
                 new lang_string('authtype_key', 'tool_ldapsync'),
                 new lang_string('authtype', 'tool_ldapsync'),
-                \tool_ldapsync\importer::MOODLE_AUTH_ADAPTER,
+                array_key_exists(\tool_ldapsync\importer::MOODLE_AUTH_ADAPTER, $enabledauth) ? \tool_ldapsync\importer::MOODLE_AUTH_ADAPTER : "manual",
+                // \tool_ldapsync\importer::MOODLE_AUTH_ADAPTER,
                 $enabledauth
             ));
 
