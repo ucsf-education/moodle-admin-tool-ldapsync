@@ -25,7 +25,6 @@
 define('NO_OUTPUT_BUFFERING', true);
 require_once('../../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
-require_once($CFG->libdir . '/dataformatlib.php');
 require_once($CFG->dirroot . '/user/lib.php');
 require_once($CFG->dirroot . '/user/profile/lib.php');
 
@@ -83,7 +82,7 @@ if ($dataformat) {
     $downloadusers = new ArrayObject($bulkusers);
     $iterator = $downloadusers->getIterator();
 
-    download_as_dataformat($filename, $dataformat, $fields, $iterator, function ($userid) use ($extrafields, $fields) {
+    \core\dataformat::download_data($filename, $dataformat, $fields, $iterator, function($userid) use ($extrafields, $fields) {
         global $DB;
         $row = [];
         if (!$user = $DB->get_record('user', ['id' => $userid])) {
