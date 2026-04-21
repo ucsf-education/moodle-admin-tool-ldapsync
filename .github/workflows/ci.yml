@@ -10,7 +10,6 @@ jobs:
       mariadb:
         image: mariadb:11
         env:
-          MARIADB_USER: "root"
           MARIADB_ALLOW_EMPTY_PASSWORD: "true"
           MARIADB_CHARACTER_SET_SERVER: "utf8mb4"
           MARIADB_COLLATION_SERVER: "utf8mb4_unicode_ci"
