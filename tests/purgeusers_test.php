@@ -51,7 +51,7 @@ class Testable_tool_ldapsync_importer_for_purgeusers extends \tool_ldapsync\impo
 /**
  * Test case for purgeusers
  */
-class purgeusers_test extends advanced_testcase {
+final class purgeusers_test extends advanced_testcase {
     /** @var \tool_ldapsync\importer $sync */
     private $sync = null;
     /** @var \LDAP\Connection $ldapconn  */
@@ -176,7 +176,7 @@ class purgeusers_test extends advanced_testcase {
     /**
      * Test create_ldap_user function
      */
-    public function test_checkifusersinldap() {
+    public function test_checkifusersinldap(): void {
         try {
             $ldap = $this->sync->ldap_connect();
         } catch (Exception $e) {
@@ -200,7 +200,7 @@ class purgeusers_test extends advanced_testcase {
     /**
      * Set the delete flag for users that have never logged in.
      */
-    public function test_setdeletedflagforneverloginusers() {
+    public function test_setdeletedflagforneverloginusers(): void {
         global $CFG;
 
         require_once($CFG->dirroot . '/user/lib.php');
@@ -246,7 +246,7 @@ class purgeusers_test extends advanced_testcase {
     /**
      * Test user is enrolled in a course.
      */
-    public function test_isuserenrolledinanycourse() {
+    public function test_isuserenrolledinanycourse(): void {
         global $CFG, $DB;
         $this->resetAfterTest(true);
 

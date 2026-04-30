@@ -60,7 +60,7 @@ class Testable_tool_ldapsync_importer_for_plugin extends \tool_ldapsync\importer
 /**
  * Test case for ldapsync plugin
  */
-class plugin_test extends advanced_testcase {
+final class plugin_test extends advanced_testcase {
     /** @var \tool_ldapsync\importer $sync */
     private $sync = null;
     /** @var \LDAP\Connection $ldapconn */
@@ -199,7 +199,7 @@ class plugin_test extends advanced_testcase {
      *
      * @group ldaptests
      */
-    public function test_connecttoldap() {
+    public function test_connecttoldap(): void {
         try {
             $ldap = $this->sync->connecttoldap();
             $this->assertInstanceOf('LDAP\Connection', $ldap);
@@ -215,7 +215,7 @@ class plugin_test extends advanced_testcase {
      * @group ldaptests
      * @depends test_connecttoldap
      */
-    public function test_get_updates_from_ldap() {
+    public function test_get_updates_from_ldap(): void {
         $ldap = $this->sync->connecttoldap();
 
         // Create a few users
@@ -259,7 +259,7 @@ class plugin_test extends advanced_testcase {
      * @group ldaptests
      * @depends test_connecttoldap
      */
-    public function test_tool_ldapsync_importer() {
+    public function test_tool_ldapsync_importer(): void {
         global $CFG, $DB;
 
         // // Create new empty test container.

@@ -82,7 +82,7 @@ if ($dataformat) {
     $downloadusers = new ArrayObject($bulkusers);
     $iterator = $downloadusers->getIterator();
 
-    \core\dataformat::download_data($filename, $dataformat, $fields, $iterator, function($userid) use ($extrafields, $fields) {
+    \core\dataformat::download_data($filename, $dataformat, $fields, $iterator, function ($userid) use ($extrafields, $fields) {
         global $DB;
         $row = [];
         if (!$user = $DB->get_record('user', ['id' => $userid])) {
