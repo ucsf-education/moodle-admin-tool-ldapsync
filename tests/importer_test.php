@@ -1,4 +1,6 @@
 <?php
+// phpcs:ignoreFile moodle.Commenting.InlineComment.InvalidEndChar - Ignore this inline comment check for now to preserve useful code for future testing against a real LDAP server.
+//
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -49,7 +51,7 @@ final class importer_test extends advanced_testcase {
 
         parent::setUp();
 
-        // Create new empty test container.
+        // @TODO: Create new empty test container.
         // $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
 
         $gmtts = strtotime('2000-01-01 00:00:00');

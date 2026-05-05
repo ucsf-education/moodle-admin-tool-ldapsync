@@ -18,7 +18,7 @@
  * Bulk export user into any dataformat
  *
  * @license    http://www.gnu.org/copyleft/gpl.html GNU Public License
- * @copyright  2007 Petr Skoda
+ * @copyright  2019 onwards, The Regents of the University of California
  * @package    tool_ldapsync
  */
 

@@ -16,8 +16,8 @@
 
 /**
  * script for bulk user delete operations
- * @package tool_ldapsync
- * @copyright  Copyright (c) 2024, UCSF Education IT
+ * @package    tool_ldapsync
+ * @copyright  2019 onwards, The Regents of the University of California
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

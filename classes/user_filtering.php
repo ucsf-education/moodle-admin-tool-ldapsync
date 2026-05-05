@@ -51,12 +51,6 @@ class user_filtering extends \user_filtering {
                     $advanced,
                     'activeonldap'
                 );
-            /* Not use for now.
-            case 'additionalldapfilter':
-                return new \user_filter_text('ldapfilter',
-                                             get_string('additionalldapfilter', 'tool_ldapsync'),
-                                             $advanced, 'ldapfilter');
-            */
             default:
                 return parent::get_field($fieldname, $advanced);
         }

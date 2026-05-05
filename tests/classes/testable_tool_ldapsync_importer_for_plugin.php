@@ -1,4 +1,6 @@
 <?php
+// phpcs:ignoreFile Generic.CodeAnalysis.UselessOverridingMethod.Found - expose protected method for testing
+
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -22,8 +24,6 @@
  * @author     Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Testable object for the importer for plugin tests

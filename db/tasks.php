@@ -20,7 +20,7 @@
  * @package    tool_ldapsync
  * @category   task
  * @author     Carson Tam <carson.tam@ucsf.edu>
- * @copyright  Copyright (c) 2019, UCSF Center for Knowledge Management
+ * @copyright  2019 onwards, The Regents of the University of California
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

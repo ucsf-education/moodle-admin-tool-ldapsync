@@ -161,6 +161,10 @@ final class purgeusers_test extends advanced_testcase {
 
     /**
      * Test create_ldap_user function
+     *
+     * @covers \classes\importer::ldap_connect
+     * @covers \classes\importer::check_users_in_ldap
+     * @covers \classes\importer::ldap_close
      */
     public function test_checkifusersinldap(): void {
         try {
@@ -185,6 +189,8 @@ final class purgeusers_test extends advanced_testcase {
 
     /**
      * Set the delete flag for users that have never logged in.
+     *
+     * @covers \classes\importer::delete_never_login
      */
     public function test_setdeletedflagforneverloginusers(): void {
         global $CFG;
@@ -231,6 +237,10 @@ final class purgeusers_test extends advanced_testcase {
 
     /**
      * Test user is enrolled in a course.
+     *
+     * @covers ::create_course
+     * @covers ::enrol_try_internal_enrol
+     * @covers ::enrol_get_users_courses
      */
     public function test_isuserenrolledinanycourse(): void {
         global $CFG, $DB;

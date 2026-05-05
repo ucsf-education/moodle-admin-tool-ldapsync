@@ -24,8 +24,6 @@
 
 namespace tool_ldapsync;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Generic yes/no filter with radio buttons for integer fields.
  */
