@@ -27,27 +27,14 @@
  * define('TEST_AUTH_LDAP_DOMAIN', 'dc=example,dc=local');
  *
  * @package    tool_ldapsync
- * @copyright  Copyright (c) 2024, UCSF Center for Knowledge Management
- * @author     2024 Carson Tam {@email carson.tam@ucsf.edu}
+ * @copyright  2019 onwards, The Regents of the University of California
+ * @author     Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/classes/testable_tool_ldapsync_importer.php');
 
-/**
- * Testable object for the importer
- */
-class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
-    /**
-     * Override function visibility for testing
-     * @param array $data
-     * @return void
-     */
-    public function updatemoodleaccounts(array $data) {
-        // Change visibility to allow tests to call protected function.
-        return parent::updatemoodleaccounts($data);
-    }
-}
 /**
  * Test case for ldapsync importer
  */
@@ -110,7 +97,7 @@ final class importer_test extends advanced_testcase {
         set_config('field_updateremote_idnumber', '0', 'auth_tool_ldapsync');
         set_config('field_lock_idnumber', 'unlocked', 'auth_tool_ldapsync');
 
-        $this->sync = new Testable_tool_ldapsync_importer($gmtts);
+        $this->sync = new testable_tool_ldapsync_importer($gmtts);
 
         ob_start();
     }

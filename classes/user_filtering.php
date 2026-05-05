@@ -18,7 +18,7 @@
  * This file contains the User Filter API.
  *
  * @package   tool_ldapsync
- * @copyright Copyright (c) 2020, UCSF Center for Knowledge Management
+ * @copyright 2019 onwards, The Regents of the University of California
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -60,27 +60,5 @@ class user_filtering extends \user_filtering {
             default:
                 return parent::get_field($fieldname, $advanced);
         }
-    }
-}
-
-
-/**
- * Generic yes/no filter with radio buttons for integer fields.
- * @copyright Copyright (c) 2019, UCSF Center for Knowledge Management
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class user_filter_activeonldap extends \user_filter_yesno {
-    /**
-     * Returns the condition to be used with SQL
-     *
-     * @param array $data filter settings
-     * @return array sql string and $params
-     */
-    public function get_sql_filter($data) {
-
-        $value = $data['value'];
-        $not = $value ? '' : 'NOT';
-
-        return ["username $not IN ( SELECT cn FROM {tool_ldapsync} )", []];
     }
 }
