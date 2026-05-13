@@ -18,7 +18,7 @@
  * Bulk export user into any dataformat
  *
  * @license    http://www.gnu.org/copyleft/gpl.html GNU Public License
- * @copyright  2007 Petr Skoda
+ * @copyright  2019 onwards, The Regents of the University of California
  * @package    tool_ldapsync
  */
 
@@ -82,7 +82,7 @@ if ($dataformat) {
     $downloadusers = new ArrayObject($bulkusers);
     $iterator = $downloadusers->getIterator();
 
-    \core\dataformat::download_data($filename, $dataformat, $fields, $iterator, function($userid) use ($extrafields, $fields) {
+    \core\dataformat::download_data($filename, $dataformat, $fields, $iterator, function ($userid) use ($extrafields, $fields) {
         global $DB;
         $row = [];
         if (!$user = $DB->get_record('user', ['id' => $userid])) {

@@ -19,7 +19,7 @@
  *
  * @package    tool_ldapsync
  * @author     Carson Tam <carson.tam@ucsf.edu>
- * @copyright  Copyright (c) 2019, UCSF Center for Knowledge Management
+ * @copyright  2019 onwards, The Regents of the University of California
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -29,7 +29,7 @@ namespace tool_ldapsync\privacy;
  * Privacy Subsystem for tool_ldapsync implementing null_provider.
  *
  * @author     Carson Tam <carson.tam@ucsf.edu>
- * @copyright  Copyright (c) 2019, UCSF Center for Knowledge Management
+ * @copyright  2019 onwards, The Regents of the University of California
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements \core_privacy\local\metadata\null_provider {

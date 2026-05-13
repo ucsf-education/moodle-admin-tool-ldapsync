@@ -17,7 +17,7 @@
 /**
  * Moodle Form for purgeusers action
  * @package     tool_ldapsync
- * @copyright   Copyright (c) 2024, UCSF Education IT
+ * @copyright   2019 onwards, The Regents of the University of California
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
