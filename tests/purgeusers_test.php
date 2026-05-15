@@ -21,10 +21,10 @@
  *       OpenLDAP server with core, cosine, nis and internet schemas
  *       and add configuration constants to config.php or phpunit.xml configuration file:
  *
- * define('TEST_AUTH_LDAP_HOST_URL', 'ldap://127.0.0.1');
- * define('TEST_AUTH_LDAP_BIND_DN', 'cn=someuser,dc=example,dc=local');
- * define('TEST_AUTH_LDAP_BIND_PW', 'somepassword');
- * define('TEST_AUTH_LDAP_DOMAIN', 'dc=example,dc=local');
+ * define('TEST_TOOL_LDAPSYNC_HOST_URL', 'ldap://127.0.0.1');
+ * define('TEST_TOOL_LDAPSYNC_BIND_DN', 'cn=someuser,dc=example,dc=local');
+ * define('TEST_TOOL_LDAPSYNC_BIND_PW', 'somepassword');
+ * define('TEST_TOOL_LDAPSYNC_DOMAIN', 'dc=example,dc=local');
  *
  * @package    tool_ldapsync
  * @copyright  2019 onwards, The Regents of the University of California
@@ -96,7 +96,7 @@ final class purgeusers_test extends advanced_testcase {
         $o['objectClass'] = ['dcObject', 'organizationalUnit'];
         $o['dc']         = 'moodletest';
         $o['ou']         = 'MOODLETEST';
-        if (!ldap_add($this->ldapconn, 'dc=moodletest,' . TEST_AUTH_LDAP_DOMAIN, $o)) {
+        if (!ldap_add($this->ldapconn, 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN, $o)) {
             $this->markTestSkipped('Can not create test LDAP container.');
         }
 
@@ -297,12 +297,12 @@ final class purgeusers_test extends advanced_testcase {
         // Base object class.
         $o['objectClass']   = ['inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount'];
         // Append UCSF specifics.
-        $o['objectClass']   = ['inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount', 'eduPerson', 'ucsfEduPerson'];
+        $o['objectClass']   = ['inetOrgPerson', 'posixAccount', 'eduPerson', 'ucsfEduPerson'];
         $o['cn']            = 'username' . $i;
         $o['sn']            = 'Lastname' . $i;
         $o['givenName']     = 'Firstname' . $i;
         $o['uid']           = $o['cn'];
-        $o['uidnumber']     = 2000 + $i;
+        $o['uidNumber']     = 2000 + $i;
         $o['gidNumber']     = 1000 + $i;
         $o['homeDirectory'] = '/';
         $o['mail']          = 'user' . $i . '@example.com';
