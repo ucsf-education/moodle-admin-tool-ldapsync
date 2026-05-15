@@ -1,4 +1,6 @@
 <?php
+// phpcs:ignoreFile moodle.Commenting.InlineComment.InvalidEndChar - Ignore this inline comment check for now to preserve useful code for future testing against a real LDAP server.
+//
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -27,31 +29,18 @@
  * define('TEST_AUTH_LDAP_DOMAIN', 'dc=example,dc=local');
  *
  * @package    tool_ldapsync
- * @copyright  Copyright (c) 2024, UCSF Center for Knowledge Management
- * @author     2024 Carson Tam {@email carson.tam@ucsf.edu}
+ * @copyright  2019 onwards, The Regents of the University of California
+ * @author     Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/classes/testable_tool_ldapsync_importer.php');
 
-/**
- * Testable object for the importer
- */
-class Testable_tool_ldapsync_importer extends \tool_ldapsync\importer {
-    /**
-     * Override function visibility for testing
-     * @param array $data
-     * @return void
-     */
-    public function updatemoodleaccounts(array $data) {
-        // Change visibility to allow tests to call protected function.
-        return parent::updatemoodleaccounts($data);
-    }
-}
 /**
  * Test case for ldapsync importer
  */
-class importer_test extends advanced_testcase {
+final class importer_test extends advanced_testcase {
     /** @var \tool_ldapsync\importer This variable holds an instance of importer */
     private $sync = null;
 
@@ -62,7 +51,7 @@ class importer_test extends advanced_testcase {
 
         parent::setUp();
 
-        // Create new empty test container.
+        // @TODO: Create new empty test container.
         // $topdn = 'dc=moodletest,' . TEST_TOOL_LDAPSYNC_DOMAIN;
 
         $gmtts = strtotime('2000-01-01 00:00:00');
@@ -110,7 +99,7 @@ class importer_test extends advanced_testcase {
         set_config('field_updateremote_idnumber', '0', 'auth_tool_ldapsync');
         set_config('field_lock_idnumber', 'unlocked', 'auth_tool_ldapsync');
 
-        $this->sync = new Testable_tool_ldapsync_importer($gmtts);
+        $this->sync = new testable_tool_ldapsync_importer($gmtts);
 
         ob_start();
     }
@@ -131,7 +120,7 @@ class importer_test extends advanced_testcase {
      * @param array     $ldapuser An array of ldapusers
      * @param array     $expected An array of expected results
      */
-    public function test_adding_new_users(array $ldapuser, array $expected) {
+    public function test_adding_new_users(array $ldapuser, array $expected): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -155,7 +144,7 @@ class importer_test extends advanced_testcase {
     /**
      * Test updating an existing account with apostrophes and dashes in last name
      */
-    public function test_update_existing_account_with_apostrophes_and_dashes() {
+    public function test_update_existing_account_with_apostrophes_and_dashes(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -216,7 +205,7 @@ class importer_test extends advanced_testcase {
     /**
      * Test skipping user with empty edupersonprincipalname (EPPN).
      */
-    public function test_user_with_empty_eppn_should_be_skipped() {
+    public function test_user_with_empty_eppn_should_be_skipped(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -274,7 +263,7 @@ class importer_test extends advanced_testcase {
      * Test that if the input does not contain any importable user, it
      * will not produce an error.
      */
-    public function test_skipping_all_users_will_not_generate_error() {
+    public function test_skipping_all_users_will_not_generate_error(): void {
         global $DB;
         $this->resetAfterTest(true);
 

@@ -1,4 +1,6 @@
 <?php
+// phpcs:ignoreFile Generic.CodeAnalysis.UselessOverridingMethod.Found - expose protected method for testing
+
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,40 +17,33 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * A scheduled task for LDAP user sync.
+ * LDAP Import plugin tests.
  *
  * @package    tool_ldapsync
- * @author     Carson Tam <carson.tam@ucsf.edu>
  * @copyright  2019 onwards, The Regents of the University of California
+ * @author     Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace tool_ldapsync\task;
 
 /**
- * A scheduled task class for LDAP user sync.
- *
+ * Testable object for the importer for plugin tests
  */
-class update_task extends \core\task\scheduled_task {
+class testable_tool_ldapsync_importer_for_plugin extends \tool_ldapsync\importer {
     /**
-     * Get a descriptive name for this task (shown to admins).
-     *
-     * @return string
+     * Change the visibility scope of the protected function to public
      */
-    public function get_name() {
-        return get_string('updatetask', 'tool_ldapsync');
+    public function connecttoldap() {
+        return parent::connecttoldap();
     }
 
     /**
-     * Run load_ldap_data_to_table
+     * Searches LDAP for user records that were updated/created after a given datetime.
+     * @param \LDAP\Connection $ldap the LDAP connection
+     * @param string|null $ldaptimestamp the datetime
+     * @return array nested array of user records
+     * @throws Exception if search fails
      */
-    public function execute() {
-        global $CFG;
-
-        $sync = new \tool_ldapsync\importer();
-        $ldapusers = $sync->load_ldap_data_to_table();
-
-        if (!empty($ldapusers)) {
-            echo "A total of " . count($ldapusers) . " active users found on LDAP.";
-        }
+    public function getupdatesfromldap($ldap, $ldaptimestamp = null) {
+        return parent::getupdatesfromldap($ldap, $ldaptimestamp);
     }
 }

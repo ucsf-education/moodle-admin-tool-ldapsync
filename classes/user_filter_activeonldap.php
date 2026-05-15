@@ -15,36 +15,30 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * A scheduled task for LDAP user sync.
+ * This file contains the User Filter API for activeonldap.
  *
- * @package    tool_ldapsync
- * @author     Carson Tam <carson.tam@ucsf.edu>
- * @copyright  2019 onwards, The Regents of the University of California
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   tool_ldapsync
+ * @copyright 2019 onwards, The Regents of the University of California
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace tool_ldapsync\task;
+
+namespace tool_ldapsync;
 
 /**
- * A scheduled task class for LDAP user sync.
- *
+ * Generic yes/no filter with radio buttons for integer fields.
  */
-class import_task extends \core\task\scheduled_task {
+class user_filter_activeonldap extends \user_filter_yesno {
     /**
-     * Get a descriptive name for this task (shown to admins).
+     * Returns the condition to be used with SQL
      *
-     * @return string
+     * @param array $data filter settings
+     * @return array sql string and $params
      */
-    public function get_name() {
-        return get_string('importtask', 'tool_ldapsync');
-    }
+    public function get_sql_filter($data) {
 
-    /**
-     * Run users sync.
-     */
-    public function execute() {
-        global $CFG;
+        $value = $data['value'];
+        $not = $value ? '' : 'NOT';
 
-        $sync = new \tool_ldapsync\importer();
-        $sync->run();
+        return ["username $not IN ( SELECT cn FROM {tool_ldapsync} )", []];
     }
 }

@@ -18,8 +18,8 @@
  * Import LDAP account into Shibboleth
  *
  * @package    tool_ldapsync
- * @copyright  Copyright (c) 2020, UCSF Center for Knowledge Management
- * @author     2020 Carson Tam {@email carson.tam@ucsf.edu}
+ * @copyright  2019 onwards, The Regents of the University of California
+ * @author     Carson Tam {@email carson.tam@ucsf.edu}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -64,8 +64,8 @@ if ($hassiteconfig) {
                 'tool_ldapsync/authtype',
                 new lang_string('authtype_key', 'tool_ldapsync'),
                 new lang_string('authtype', 'tool_ldapsync'),
-                array_key_exists(\tool_ldapsync\importer::MOODLE_AUTH_ADAPTER, $enabledauth) ? \tool_ldapsync\importer::MOODLE_AUTH_ADAPTER : "manual",
-                // \tool_ldapsync\importer::MOODLE_AUTH_ADAPTER,
+                array_key_exists(\tool_ldapsync\importer::MOODLE_AUTH_ADAPTER, $enabledauth) ?
+                    \tool_ldapsync\importer::MOODLE_AUTH_ADAPTER : "manual",
                 $enabledauth
             ));
 

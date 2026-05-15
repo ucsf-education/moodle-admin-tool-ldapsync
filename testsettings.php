@@ -20,7 +20,7 @@
  * @package     tool_ldapsync
  * @author      Carson Tam <carson.tam@ucsf.edu>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright   Copyright (c) 2024, UCSF Education IT
+ * @copyright   2019 onwards, The Regents of the University of California
  *
  */
 

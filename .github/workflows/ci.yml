@@ -4,19 +4,24 @@ on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       mariadb:
         image: mariadb:11
         env:
-          MYSQL_USER: "root"
-          MYSQL_ALLOW_EMPTY_PASSWORD: "true"
-          MYSQL_CHARACTER_SET_SERVER: "utf8mb4"
-          MYSQL_COLLATION_SERVER: "utf8mb4_unicode_ci"
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
+          MARIADB_CHARACTER_SET_SERVER: "utf8mb4"
+          MARIADB_COLLATION_SERVER: "utf8mb4_unicode_ci"
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 3
+        options: --health-cmd="mariadb-admin ping" --health-interval 10s --health-timeout 5s --health-retries 3
+
+      ldap:
+        image: larrycai/openldap:latest
+        ports:
+          - 389:389
+        options: --health-cmd="ldapsearch -x -H ldap://localhost:389 -b dc=openstack,dc=org" --health-interval 10s --health-timeout 5s --health-retries 3
 
     strategy:
       fail-fast: false
@@ -24,6 +29,7 @@ jobs:
         php: ["8.2", "8.3"]
         moodle-branch: ["main"]
         database: [mariadb]
+        extensions: ["ldap"]
 
     steps:
       - name: Check out repository code
@@ -55,6 +61,95 @@ jobs:
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}
+
+      - name: Import eduPerson and (partial) ucsfEduPerson schemas
+        #  The ucsfEduPerson schema we are using here could be different from actual schema, but should be sufficient for our PHPUnit tests here.
+        run: |
+          set -euxo pipefail
+
+          # Fetch the standard eduPerson schema definition from REFEDS.
+          curl -fsSL \
+            -o eduperson.ldif \
+            https://raw.githubusercontent.com/REFEDS/eduperson/master/schema/openldap/eduperson.ldif
+
+          # Write the ucsfEduPerson schema to ucsfeduperson.ldif to be imported into the LDAP container.
+          # This is a partial schema containing only the attributes and object class needed for our PHPUnit tests, and may not be a complete representation of the actual UCSF schema.
+          cat > ucsfeduperson.ldif <<'LDIF'
+          dn: cn=ucsfeduperson,cn=schema,cn=config
+          changetype: add
+          objectClass: olcSchemaConfig
+          cn: ucsfeduperson
+          olcAttributeTypes: ( 1.3.6.1.4.1.20319.1.1.1.1
+            NAME 'ucsfEduIDNumber'
+            DESC 'UCSF ID Number'
+            EQUALITY caseIgnoreMatch
+            SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+          olcAttributeTypes: ( 1.3.6.1.4.1.20319.1.1.1.34
+            NAME 'ucsfEduPreferredGivenName'
+            DESC 'Preferred First Name'
+            EQUALITY caseIgnoreMatch
+            SUBSTR caseIgnoreSubstringsMatch
+            SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+          olcAttributeTypes: ( 1.3.6.1.4.1.20319.1.1.1.59
+            NAME 'ucsfEduPreferredMiddleName'
+            DESC 'Designate preferred middle name of the user.'
+            EQUALITY caseIgnoreMatch
+            SUBSTR caseIgnoreSubstringsMatch
+            SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+            SINGLE-VALUE )
+          olcAttributeTypes: ( 1.3.6.1.4.1.20319.1.1.1.60
+            NAME 'ucsfEduPreferredLastName'
+            DESC 'Designate preferred last name of the user.'
+            EQUALITY caseIgnoreMatch
+            SUBSTR caseIgnoreSubstringsMatch
+            SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+            SINGLE-VALUE )
+          olcObjectClasses: ( 1.3.6.1.4.1.20319.1.2.1
+            NAME 'ucsfEduPerson'
+            DESC 'UCSF Edu Person Attributes'
+            AUXILIARY
+            MAY (
+              ucsfEduIDNumber $
+              ucsfEduPreferredGivenName $
+              ucsfEduPreferredLastName $
+              ucsfEduPreferredMiddleName
+            ) )
+          LDIF
+
+          # Find the LDAP service container started by GitHub Actions.
+          LDAP_CONTAINER="$(docker ps --filter 'ancestor=larrycai/openldap:latest' --format '{{.ID}}' | head -n1)"
+          test -n "$LDAP_CONTAINER"
+
+          # Copy both schema files into the LDAP container.
+          docker cp eduperson.ldif "${LDAP_CONTAINER}:/tmp/eduperson.ldif"
+          docker cp ucsfeduperson.ldif "${LDAP_CONTAINER}:/tmp/ucsfeduperson.ldif"
+
+          # Start slapd once, import whichever schemas are not already present,
+          # then stop slapd again when finished.
+          docker exec "$LDAP_CONTAINER" sh -lc '
+            set -eux
+
+            # Import eduPerson only if it is not already loaded.
+            if ! find /etc/ldap/slapd.d/cn=config/cn=schema -name "*eduperson.ldif" -print -quit | grep -q .; then
+              ldapadd -Y EXTERNAL -H ldapi:/// -f /tmp/eduperson.ldif
+            fi
+
+            # Import ucsfeduperson only if it is not already loaded.
+            if ! find /etc/ldap/slapd.d/cn=config/cn=schema -name "*ucsfeduperson.ldif" -print -quit | grep -q .; then
+              ldapadd -v -Y EXTERNAL -H ldapi:/// -f /tmp/ucsfeduperson.ldif
+            fi
+          '
+
+      - name: Configure LDAPSYNC PHPUnit constants
+        run: |
+          cat >> "./moodle/config.php" <<'PHP'
+
+          define('TEST_TOOL_LDAPSYNC_HOST_URL', 'ldap://localhost');
+          define('TEST_TOOL_LDAPSYNC_BIND_DN', 'cn=admin,dc=openstack,dc=org');
+          define('TEST_TOOL_LDAPSYNC_BIND_PW', 'password');
+          define('TEST_TOOL_LDAPSYNC_DOMAIN', 'dc=openstack,dc=org');
+
+          PHP
 
       - name: PHP Lint
         if: ${{ !cancelled() }}
