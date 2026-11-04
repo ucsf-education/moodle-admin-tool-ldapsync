@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     services:
       mariadb:
@@ -26,8 +26,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ["8.3"]
-        moodle-branch: ["main", "MOODLE_502_STABLE", "MOODLE_501_STABLE"]
+        php: ["8.3", "8.4"]
+        moodle-branch: ["MOODLE_502_STABLE"]
         database: [mariadb]
         extensions: ["ldap"]
 
@@ -191,6 +191,15 @@ jobs:
       - name: Behat features
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci behat --profile chrome
+
+      - name: Upload Behat Faildump
+        if: ${{ failure() && steps.behat.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Behat Faildump (${{ join(matrix.*, ', ') }})
+          path: ${{ github.workspace }}/moodledata/behat_dump
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Mark cancelled jobs as failed.
         if: ${{ cancelled() }}
